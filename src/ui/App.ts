@@ -13,6 +13,7 @@ import { createStarfield } from "./world/stars";
 
 export class App {
   private scene: THREE.Scene;
+  private worldGroup: THREE.Group;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls;
@@ -33,6 +34,9 @@ export class App {
 
   private selectedCountryName: string | null = null;
   private isDetailView = false;
+  private lastFrameTime = 0;
+  // ~2 degrees per minute; subtle enough to read but noticeable.
+  private earthRotationRateRadPerSec = (20 * Math.PI) / 180 / 60;
 
   private cameraDefaultPosition = new THREE.Vector3(0, 0, 2.5);
   private cameraDefaultTarget = new THREE.Vector3(0, 0, 0);
@@ -52,6 +56,8 @@ export class App {
 
   constructor(private container: HTMLElement) {
     this.scene = new THREE.Scene();
+    this.worldGroup = new THREE.Group();
+    this.scene.add(this.worldGroup);
     this.scene.add(createStarfield());
     this.camera = new THREE.PerspectiveCamera(
       75,
@@ -158,7 +164,7 @@ export class App {
 
   private async loadSceneAssets() {
     try {
-      const globeAssets = await createGlobe(this.scene);
+      const globeAssets = await createGlobe(this.worldGroup);
       this.globe = globeAssets.globe;
       this.globeGlow = globeAssets.glow;
     } catch (error) {
@@ -166,7 +172,7 @@ export class App {
     }
 
     try {
-      const overlays = await loadCountryOverlays(this.scene, {
+      const overlays = await loadCountryOverlays(this.worldGroup, {
         base: this.countryBaseMaterial,
         hover: this.countryHoverMaterial,
         stripe: this.countryStripeMaterial,
@@ -370,7 +376,16 @@ export class App {
   private animate() {
     requestAnimationFrame(() => this.animate());
 
-    const t = performance.now() * 0.005;
+    const now = performance.now();
+    const dt = this.lastFrameTime ? (now - this.lastFrameTime) / 1000 : 0;
+    this.lastFrameTime = now;
+
+    // Rotate the globe gently; keep it paused during camera moves/detail view.
+    if (this.worldGroup && !this.cameraAnimation && !this.isDetailView) {
+      this.worldGroup.rotation.y += this.earthRotationRateRadPerSec * dt;
+    }
+
+    const t = now * 0.005;
     this.countryHoverMaterial.opacity = 0.8 + 0.5 * Math.sin(t);
     this.celestialSystem.update();
 

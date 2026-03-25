@@ -73,7 +73,7 @@ async function loadTextureFromSvg(): Promise<THREE.Texture | null> {
   });
 }
 
-export async function createGlobe(scene: THREE.Scene): Promise<GlobeAssets> {
+export async function createGlobe(container: THREE.Object3D): Promise<GlobeAssets> {
   const texturePath = "/image";
   const texture =
     (await loadTextureFromImage(texturePath)) ?? (await loadTextureFromSvg());
@@ -88,7 +88,7 @@ export async function createGlobe(scene: THREE.Scene): Promise<GlobeAssets> {
     depthWrite: false,
   });
   const globe = new THREE.Mesh(geometry, material);
-  scene.add(globe);
+  container.add(globe);
 
   const glowGeometry = new THREE.SphereGeometry(1.04, 64, 32);
   const glowMaterial = new THREE.MeshBasicMaterial({
@@ -100,7 +100,7 @@ export async function createGlobe(scene: THREE.Scene): Promise<GlobeAssets> {
     depthWrite: false,
   });
   const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-  scene.add(glow);
+  container.add(glow);
 
   return { globe, glow };
 }

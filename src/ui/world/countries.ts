@@ -126,7 +126,7 @@ function addCountryStripes(
 }
 
 export async function loadCountryOverlays(
-  scene: THREE.Scene,
+  container: THREE.Object3D,
   materials: BorderMaterials
 ): Promise<CountryOverlayAssets> {
   const countryMeshes: THREE.Object3D[] = [];
@@ -192,7 +192,7 @@ export async function loadCountryOverlays(
     }
 
     addCountryStripes(rings, group, materials.stripe);
-    scene.add(group);
+    container.add(group);
     countryMeshes.push(group);
     countryPolygons.push({ name, rings });
   }
