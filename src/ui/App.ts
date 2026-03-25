@@ -9,6 +9,7 @@ import {
   type CountryPolygon,
 } from "./world/geo";
 import { createGlobe } from "./world/globe";
+import { createStarfield } from "./world/stars";
 
 export class App {
   private scene: THREE.Scene;
@@ -51,6 +52,7 @@ export class App {
 
   constructor(private container: HTMLElement) {
     this.scene = new THREE.Scene();
+    this.scene.add(createStarfield());
     this.camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
@@ -89,6 +91,7 @@ export class App {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
+    this.controls.enablePan = false;
     this.controls.minDistance = 1.5;
     this.controls.maxDistance = 5;
 
