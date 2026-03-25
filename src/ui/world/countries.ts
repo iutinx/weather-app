@@ -20,6 +20,28 @@ function isInsideCountryRings(lat: number, lon: number, rings: number[][][]): bo
   return false;
 }
 
+function refineCrossingLon(
+  lat: number,
+  lonA: number,
+  lonB: number,
+  rings: number[][][],
+  maxIterations = 12
+): number {
+  // Preconditions: isInsideCountryRings(lat, lonA) !== isInsideCountryRings(lat, lonB)
+  let left = Math.min(lonA, lonB);
+  let right = Math.max(lonA, lonB);
+  let insideLeft = isInsideCountryRings(lat, left, rings);
+
+  for (let i = 0; i < maxIterations; i++) {
+    const mid = (left + right) / 2;
+    const insideMid = isInsideCountryRings(lat, mid, rings);
+    if (insideMid === insideLeft) left = mid;
+    else right = mid;
+  }
+
+  return (left + right) / 2;
+}
+
 function addCountryStripes(
   rings: number[][][],
   group: THREE.Group,
@@ -37,37 +59,65 @@ function addCountryStripes(
 
   if (minLat > maxLat) return;
 
-  const latStep = 2.25;
-  const lonStep = 1.75;
-  const stripeRadius = 1.011;
+  // Slightly denser sampling + refined endpoints so stripes meet the border.
+  const latStep = 2.0;
+  const lonStep = 1.6;
+  // Match base border radius closely to reduce visible gaps.
+  const stripeRadius = 1.01;
+  const EPS = 1e-6;
+  const LON_START = -180;
+  const LON_END = 180;
 
-  for (let lat = minLat; lat <= maxLat; lat += latStep) {
-    const stripePoints: THREE.Vector3[] = [];
-    let hasSegment = false;
+  for (let lat = minLat; lat <= maxLat + EPS; lat += latStep) {
+    let segmentPoints: THREE.Vector3[] = [];
 
-    for (let lon = -180; lon <= 180; lon += lonStep) {
-      if (isInsideCountryRings(lat, lon, rings)) {
-        stripePoints.push(latLonToVector3(lat, lon, stripeRadius));
-        hasSegment = true;
-      } else if (hasSegment && stripePoints.length >= 2) {
-        group.add(
-          new THREE.Line(
-            new THREE.BufferGeometry().setFromPoints(stripePoints),
-            stripeMaterial
-          )
-        );
-        stripePoints.length = 0;
-        hasSegment = false;
-      } else {
-        stripePoints.length = 0;
-        hasSegment = false;
-      }
+    let prevLon = LON_START;
+    let prevInside = isInsideCountryRings(lat, prevLon, rings);
+    if (prevInside) {
+      segmentPoints.push(latLonToVector3(lat, prevLon, stripeRadius));
     }
 
-    if (hasSegment && stripePoints.length >= 2) {
+    for (
+      let lon = LON_START + lonStep;
+      lon <= LON_END + EPS;
+      lon += lonStep
+    ) {
+      const inside = isInsideCountryRings(lat, lon, rings);
+
+      if (inside && !prevInside) {
+        // Entering: start the stripe at a refined border point.
+        segmentPoints = [];
+        const crossLon = refineCrossingLon(lat, prevLon, lon, rings);
+        segmentPoints.push(latLonToVector3(lat, crossLon, stripeRadius));
+        segmentPoints.push(latLonToVector3(lat, lon, stripeRadius));
+      } else if (inside && prevInside) {
+        // Continuing inside: extend with the sampled point.
+        segmentPoints.push(latLonToVector3(lat, lon, stripeRadius));
+      } else if (!inside && prevInside) {
+        // Exiting: close stripe at a refined border point.
+        const crossLon = refineCrossingLon(lat, prevLon, lon, rings);
+        segmentPoints.push(latLonToVector3(lat, crossLon, stripeRadius));
+
+        if (segmentPoints.length >= 2) {
+          group.add(
+            new THREE.Line(
+              new THREE.BufferGeometry().setFromPoints(segmentPoints),
+              stripeMaterial
+            )
+          );
+        }
+        segmentPoints = [];
+      } // else: outside && outside => do nothing
+
+      prevLon = lon;
+      prevInside = inside;
+    }
+
+    // Handle a stripe that reaches the end of the scan.
+    if (prevInside && segmentPoints.length >= 2) {
       group.add(
         new THREE.Line(
-          new THREE.BufferGeometry().setFromPoints(stripePoints),
+          new THREE.BufferGeometry().setFromPoints(segmentPoints),
           stripeMaterial
         )
       );
