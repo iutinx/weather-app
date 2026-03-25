@@ -21,7 +21,7 @@ An interactive weather statistics web app built with TypeScript, Vite, and React
 | Vite | Build tool & dev server |
 | Three.js / React Three Fiber | 3D rendering |
 
-### Backend
+### Backend (to be added)
 | Technology | Purpose |
 |---|---|
 | Custom REST API | Weather data endpoints |
