@@ -184,7 +184,11 @@ export class CelestialSystem {
   private loadSunModel() {
     const loader = new GLTFLoader();
     const candidateUrls = [
+      // Use the model that references real texture files in `public/models/sun_2/textures`.
+      "/models/sun_2/scene.gltf",
+      // Fallback: the other textured sun model.
       "/models/sun/scene.gltf",
+      // Fallbacks.
       "/models/sun.glb",
       "/models/stroming_sun.glb",
       "/models/scene.gltf",
@@ -198,7 +202,7 @@ export class CelestialSystem {
     const tryNext = () => {
       if (tryIndex >= candidateUrls.length) {
         console.warn(
-          "Failed to load stroming_sun.glb from all candidate paths, using fallback sun mesh."
+          `Failed to load sun model from all candidate paths, using fallback sun mesh. (tried ${candidateUrls.length} urls)`
         );
         return;
       }
@@ -211,7 +215,7 @@ export class CelestialSystem {
           sunModel.updateMatrixWorld(true);
           const meshBounds = new THREE.Box3();
           let meshCount = 0;
-          let materialsWithMap = 0;
+          let materialsWithTextureMaps = 0;
           let meshesWithVertexColors = 0;
 
           sunModel.traverse((child) => {
@@ -227,20 +231,63 @@ export class CelestialSystem {
                 : [mesh.material];
               materials.forEach((mat) => {
                 mat.side = THREE.DoubleSide;
+                const matAny = mat as any;
+                const hasAnyTexture =
+                  !!matAny.map || !!matAny.emissiveMap || !!matAny.transmissionMap;
+                if (hasAnyTexture) materialsWithTextureMaps++;
+
                 if ((mat as THREE.MeshStandardMaterial).isMeshStandardMaterial) {
                   const std = mat as THREE.MeshStandardMaterial;
-                  if (std.map) materialsWithMap++;
                   if (mesh.geometry.getAttribute("color")) {
                     std.vertexColors = true;
                     meshesWithVertexColors++;
                   }
-                  std.emissive = new THREE.Color(0xffa733);
-                  std.emissiveIntensity = 1.15;
-                  std.transparent = true;
-                  std.opacity = 0.72;
-                  std.blending = THREE.AdditiveBlending;
-                  std.depthWrite = false;
-                  std.toneMapped = false;
+                  // For sun_2, keep the authored opacity/map behavior,
+                  // otherwise fall back to our tuned "cartoon sun" look.
+                  if (modelUrl.includes("sun_2")) {
+                    // Ensure emissive texture is not multiplied by black.
+                    std.emissive = new THREE.Color(0xffffff);
+                    std.emissiveIntensity = 1.25;
+                    std.blending = THREE.NormalBlending;
+                    std.depthWrite = false;
+                    std.toneMapped = false;
+                    std.transparent = true;
+                    if (typeof std.opacity !== "number") std.opacity = 1;
+                  } else {
+                    std.emissive = new THREE.Color(0xffa733);
+                    std.emissiveIntensity = 1.15;
+                    std.transparent = true;
+                    std.opacity = 0.72;
+                    std.blending = THREE.AdditiveBlending;
+                    std.depthWrite = false;
+                    std.toneMapped = false;
+                  }
+                  std.needsUpdate = true;
+                } else if ((mat as THREE.MeshPhysicalMaterial).isMeshPhysicalMaterial) {
+                  const phy = mat as THREE.MeshPhysicalMaterial;
+                  if (mesh.geometry.getAttribute("color")) {
+                    phy.vertexColors = true;
+                    meshesWithVertexColors++;
+                  }
+                  if (modelUrl.includes("sun_2")) {
+                    // Ensure emissive texture is not multiplied by black.
+                    phy.emissive = new THREE.Color(0xffffff);
+                    phy.emissiveIntensity = 1.25;
+                    phy.blending = THREE.NormalBlending;
+                    phy.depthWrite = false;
+                    phy.toneMapped = false;
+                    phy.transparent = true;
+                    if (typeof phy.opacity !== "number") phy.opacity = 1;
+                  } else {
+                    phy.emissive = new THREE.Color(0xffa733);
+                    phy.emissiveIntensity = 1.15;
+                    phy.transparent = true;
+                    phy.opacity = 0.72;
+                    phy.blending = THREE.AdditiveBlending;
+                    phy.depthWrite = false;
+                    phy.toneMapped = false;
+                  }
+                  phy.needsUpdate = true;
                 }
               });
             }
@@ -271,12 +318,12 @@ export class CelestialSystem {
           // the model's real appearance (maps or vertex-color driven).
           this.sunCoreMesh.visible = false;
           console.info(
-            `Sun model visible from: ${modelUrl} (meshes=${meshCount}, materialsWithMap=${materialsWithMap}, meshesWithVertexColors=${meshesWithVertexColors}, maxDim=${maxDim.toFixed(3)}, scale=${scaleFactor.toFixed(4)})`
+            `Sun model visible from: ${modelUrl} (meshes=${meshCount}, materialsWithTextureMaps=${materialsWithTextureMaps}, meshesWithVertexColors=${meshesWithVertexColors}, maxDim=${maxDim.toFixed(3)}, scale=${scaleFactor.toFixed(4)})`
           );
 
-          if (materialsWithMap === 0) {
+          if (materialsWithTextureMaps === 0) {
             console.warn(
-              "Loaded sun model has no texture maps. Prefer /models/sun/scene.gltf with textures folder, or re-export with embedded textures."
+              "Loaded sun model has no texture maps detected (map/emissiveMap/transmissionMap). Prefer /models/sun/scene.gltf with textures folder, or re-export with embedded textures."
             );
           }
         },
