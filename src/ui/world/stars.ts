@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 /** Distant point stars on a thin spherical shell, centered on the globe. */
-export function createStarfield(count = 3200, radius = 1000): THREE.Points {
+export function createStarfield(count = 3250, radius = 1150): THREE.Points {
   const positions = new Float32Array(count * 3);
   const colors = new Float32Array(count * 3);
 
