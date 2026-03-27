@@ -11,6 +11,10 @@ import {
 import { createGlobe } from "./world/globe";
 import { createStarfield } from "./world/stars";
 
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
 export class App {
   private scene: THREE.Scene;
   private worldGroup: THREE.Group;
@@ -40,7 +44,6 @@ export class App {
 
   private cameraDefaultPosition = new THREE.Vector3(0, 0, 2.5);
   private cameraDefaultTarget = new THREE.Vector3(0, 0, 0);
-  private detailViewDirection: THREE.Vector3 | null = null;
   private cameraAnimation:
     | {
         fromPos: THREE.Vector3;
@@ -307,10 +310,7 @@ export class App {
     this.showCountryPanel(selectedPolygon.displayName);
 
     const center = getCountryCenter(this.countryPolygons, countryId);
-    if (center) {
-      this.detailViewDirection = latLonToVector3(center.lat, center.lon, 1.0).normalize();
-      this.startCameraAnimationToLatLon(center.lat, center.lon);
-    }
+    if (center) this.startCameraAnimationToLatLon(center.lat, center.lon);
   }
 
   private exitDetailView() {
@@ -322,36 +322,19 @@ export class App {
     this.selectedCountryName = null;
     this.setHoveredCountry(null);
     this.hideCountryPanel();
-    this.startCameraAnimationToRelativeDefault(this.detailViewDirection);
-    this.detailViewDirection = null;
   }
 
+  /** Slow zoom toward the region center; orbit target stays at globe center. */
   private startCameraAnimationToLatLon(lat: number, lon: number) {
     const surfacePoint = latLonToVector3(lat, lon, 1.0).normalize();
-    const targetPos = surfacePoint.multiplyScalar(2.1);
+    const targetPos = surfacePoint.multiplyScalar(1.95);
     this.cameraAnimation = {
       fromPos: this.camera.position.clone(),
       toPos: targetPos,
       fromTarget: this.controls.target.clone(),
       toTarget: this.cameraDefaultTarget.clone(),
       startTime: performance.now(),
-      duration: 600,
-    };
-  }
-
-  private startCameraAnimationToRelativeDefault(direction: THREE.Vector3 | null) {
-    const targetDistance = this.cameraDefaultPosition.length();
-    const toPos = direction
-      ? direction.clone().normalize().multiplyScalar(targetDistance)
-      : this.cameraDefaultPosition.clone();
-
-    this.cameraAnimation = {
-      fromPos: this.camera.position.clone(),
-      toPos,
-      fromTarget: this.controls.target.clone(),
-      toTarget: this.cameraDefaultTarget.clone(),
-      startTime: performance.now(),
-      duration: 900,
+      duration: 2600,
     };
   }
 
@@ -436,16 +419,17 @@ export class App {
       const tAnim =
         (now - this.cameraAnimation.startTime) / this.cameraAnimation.duration;
       const clampedT = Math.min(Math.max(tAnim, 0), 1);
+      const easedT = easeInOutCubic(clampedT);
 
       this.camera.position.lerpVectors(
         this.cameraAnimation.fromPos,
         this.cameraAnimation.toPos,
-        clampedT
+        easedT
       );
       this.controls.target.lerpVectors(
         this.cameraAnimation.fromTarget,
         this.cameraAnimation.toTarget,
-        clampedT
+        easedT
       );
       this.controls.update();
 
