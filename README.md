@@ -37,30 +37,6 @@ An interactive weather statistics web app built with TypeScript, Vite, and React
 - [Node.js](https://nodejs.org/) (v18+)
 - [Docker](https://www.docker.com/) & Docker Compose
 
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/iutinx/weather-app.git
-cd weather-app
-```
-
-### 2. Start the backend
-
-```bash
-docker compose up -d
-```
-
-### 3. Install frontend dependencies
-
-```bash
-npm install
-```
-
-### 4. Start the dev server
-
-```bash
-npm run dev
-```
 
 The app will be available at `http://localhost:5173`.
 
