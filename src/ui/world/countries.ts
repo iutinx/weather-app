@@ -132,18 +132,27 @@ export async function loadCountryOverlays(
   const countryMeshes: THREE.Object3D[] = [];
   const countryPolygons: CountryPolygon[] = [];
 
-  const res = await fetch("/geojsons/mediumcountries.geojson");
+  const res = await fetch("/geojsons/admin1.geojson");
   if (!res.ok) throw new Error("Failed to load countries.geojson");
   const geojson = await res.json();
 
   for (const feature of geojson.features) {
-    const name =
-      feature.properties?.ADMIN || feature.properties?.name || "Unknown country";
+    const regionName = feature.properties?.name || "Unknown region";
+    const parentCountry =
+      feature.properties?.admin ||
+      feature.properties?.ADMIN ||
+      "Unknown country";
+    const displayName =
+      regionName === parentCountry
+        ? regionName
+        : `${regionName} (${parentCountry})`;
+    const polygonId = `${parentCountry}::${regionName}`;
     const geomType = feature.geometry.type;
     const coords = feature.geometry.coordinates;
 
     const group = new THREE.Group();
-    group.userData.countryName = name;
+    group.userData.countryName = displayName;
+    group.userData.polygonId = polygonId;
 
     const hoverGroup = new THREE.Group();
     hoverGroup.visible = false;
@@ -164,14 +173,14 @@ export async function loadCountryOverlays(
         new THREE.BufferGeometry().setFromPoints(basePoints),
         materials.base
       );
-      baseLine.userData.countryName = name;
+      baseLine.userData.countryName = displayName;
       group.add(baseLine);
 
       const hoverLine = new THREE.Line(
         new THREE.BufferGeometry().setFromPoints(hoverPoints),
         materials.hover
       );
-      hoverLine.userData.countryName = name;
+      hoverLine.userData.countryName = displayName;
       hoverGroup.add(hoverLine);
     };
 
@@ -194,7 +203,13 @@ export async function loadCountryOverlays(
     addCountryStripes(rings, group, materials.stripe);
     container.add(group);
     countryMeshes.push(group);
-    countryPolygons.push({ name, rings });
+    countryPolygons.push({
+      id: polygonId,
+      name: regionName,
+      countryName: parentCountry,
+      displayName,
+      rings,
+    });
   }
 
   return { countryMeshes, countryPolygons };

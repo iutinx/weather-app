@@ -1,6 +1,12 @@
 import * as THREE from "three";
 
-export type CountryPolygon = { name: string; rings: number[][][] };
+export type CountryPolygon = {
+  id: string;
+  name: string;
+  countryName: string;
+  displayName: string;
+  rings: number[][][];
+};
 
 export function latLonToVector3(
   lat: number,
@@ -42,11 +48,11 @@ export function findCountryAtLatLon(
   countries: CountryPolygon[],
   lat: number,
   lon: number
-): string | null {
+): CountryPolygon | null {
   for (const country of countries) {
     for (const ring of country.rings) {
       if (ring.length === 0) continue;
-      if (pointInPolygon(lon, lat, ring)) return country.name;
+      if (pointInPolygon(lon, lat, ring)) return country;
     }
   }
   return null;
@@ -54,9 +60,9 @@ export function findCountryAtLatLon(
 
 export function getCountryCenter(
   countries: CountryPolygon[],
-  countryName: string
+  countryId: string
 ): { lat: number; lon: number } | null {
-  const poly = countries.find((c) => c.name === countryName);
+  const poly = countries.find((c) => c.id === countryId);
   if (!poly) return null;
 
   let sumLat = 0;

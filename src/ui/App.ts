@@ -40,6 +40,7 @@ export class App {
 
   private cameraDefaultPosition = new THREE.Vector3(0, 0, 2.5);
   private cameraDefaultTarget = new THREE.Vector3(0, 0, 0);
+  private detailViewDirection: THREE.Vector3 | null = null;
   private cameraAnimation:
     | {
         fromPos: THREE.Vector3;
@@ -98,7 +99,9 @@ export class App {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
     this.controls.enablePan = false;
-    this.controls.minDistance = 1.5;
+    this.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+    this.controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
+    this.controls.minDistance = 0.5;
     this.controls.maxDistance = 5;
 
     this.celestialSystem = new CelestialSystem(this.scene);
@@ -203,22 +206,28 @@ export class App {
       return;
     }
 
-    const hitPoint = hit[0].point.clone().normalize();
-    const lat = THREE.MathUtils.radToDeg(Math.asin(hitPoint.y));
-    const lon = THREE.MathUtils.radToDeg(Math.atan2(hitPoint.z, -hitPoint.x));
-    const countryName = findCountryAtLatLon(this.countryPolygons, lat, lon);
+    const latLon = this.getLatLonFromGlobeHit(hit[0].point);
+    if (!latLon) {
+      this.hideTooltip();
+      this.setHoveredCountry(null);
+      return;
+    }
+    const { lat, lon } = latLon;
+    const country = findCountryAtLatLon(this.countryPolygons, lat, lon);
 
-    if (!countryName) {
+    if (!country) {
       this.hideTooltip();
       this.setHoveredCountry(null);
       return;
     }
 
-    this.setHoveredCountry(countryName);
-    this.updateTooltip(event.clientX, event.clientY, countryName);
+    this.setHoveredCountry(country.id);
+    this.updateTooltip(event.clientX, event.clientY, country.displayName);
   }
 
   private onClick(event: MouseEvent) {
+    if (event.button !== 0) return;
+
     const rect = this.renderer.domElement.getBoundingClientRect();
     this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -237,21 +246,38 @@ export class App {
       return;
     }
 
-    const hitPoint = hit[0].point.clone().normalize();
-    const lat = THREE.MathUtils.radToDeg(Math.asin(hitPoint.y));
-    const lon = THREE.MathUtils.radToDeg(Math.atan2(hitPoint.z, -hitPoint.x));
-    const countryName = findCountryAtLatLon(this.countryPolygons, lat, lon);
+    const latLon = this.getLatLonFromGlobeHit(hit[0].point);
+    if (!latLon) {
+      this.selectedCountryName = null;
+      this.hideCountryPanel();
+      return;
+    }
+    const { lat, lon } = latLon;
+    const country = findCountryAtLatLon(this.countryPolygons, lat, lon);
 
-    if (!countryName) {
+    if (!country) {
       this.selectedCountryName = null;
       this.hideCountryPanel();
       return;
     }
 
-    this.enterDetailView(countryName);
+    this.enterDetailView(country.id);
   }
 
-  private setHoveredCountry(countryName: string | null) {
+  private getLatLonFromGlobeHit(
+    worldPoint: THREE.Vector3
+  ): { lat: number; lon: number } | null {
+    if (!this.globe) return null;
+
+    // Convert world hit to globe-local coordinates so picking stays aligned
+    // while the world group auto-rotates.
+    const localPoint = this.globe.worldToLocal(worldPoint.clone()).normalize();
+    const lat = THREE.MathUtils.radToDeg(Math.asin(localPoint.y));
+    const lon = THREE.MathUtils.radToDeg(Math.atan2(localPoint.z, -localPoint.x));
+    return { lat, lon };
+  }
+
+  private setHoveredCountry(countryId: string | null) {
     if (this.hoveredCountry) {
       const prevHoverGroup = (this.hoveredCountry as THREE.Group).userData
         ?.hoverGroup as THREE.Group | undefined;
@@ -259,10 +285,10 @@ export class App {
       this.hoveredCountry = null;
     }
 
-    if (!countryName) return;
+    if (!countryId) return;
 
     const group = this.countryMeshes.find(
-      (obj) => (obj as THREE.Group).userData?.countryName === countryName
+      (obj) => (obj as THREE.Group).userData?.polygonId === countryId
     ) as THREE.Group | undefined;
     if (!group) return;
 
@@ -271,14 +297,20 @@ export class App {
     this.hoveredCountry = group;
   }
 
-  private enterDetailView(countryName: string) {
-    this.isDetailView = true;
-    this.selectedCountryName = countryName;
-    this.hideTooltip();
-    this.showCountryPanel(countryName);
+  private enterDetailView(countryId: string) {
+    const selectedPolygon = this.countryPolygons.find((p) => p.id === countryId);
+    if (!selectedPolygon) return;
 
-    const center = getCountryCenter(this.countryPolygons, countryName);
-    if (center) this.startCameraAnimationToLatLon(center.lat, center.lon);
+    this.isDetailView = true;
+    this.selectedCountryName = selectedPolygon.id;
+    this.hideTooltip();
+    this.showCountryPanel(selectedPolygon.displayName);
+
+    const center = getCountryCenter(this.countryPolygons, countryId);
+    if (center) {
+      this.detailViewDirection = latLonToVector3(center.lat, center.lon, 1.0).normalize();
+      this.startCameraAnimationToLatLon(center.lat, center.lon);
+    }
   }
 
   private exitDetailView() {
@@ -290,7 +322,8 @@ export class App {
     this.selectedCountryName = null;
     this.setHoveredCountry(null);
     this.hideCountryPanel();
-    this.startCameraAnimationToDefault();
+    this.startCameraAnimationToRelativeDefault(this.detailViewDirection);
+    this.detailViewDirection = null;
   }
 
   private startCameraAnimationToLatLon(lat: number, lon: number) {
@@ -306,10 +339,15 @@ export class App {
     };
   }
 
-  private startCameraAnimationToDefault() {
+  private startCameraAnimationToRelativeDefault(direction: THREE.Vector3 | null) {
+    const targetDistance = this.cameraDefaultPosition.length();
+    const toPos = direction
+      ? direction.clone().normalize().multiplyScalar(targetDistance)
+      : this.cameraDefaultPosition.clone();
+
     this.cameraAnimation = {
       fromPos: this.camera.position.clone(),
-      toPos: this.cameraDefaultPosition.clone(),
+      toPos,
       fromTarget: this.controls.target.clone(),
       toTarget: this.cameraDefaultTarget.clone(),
       startTime: performance.now(),
