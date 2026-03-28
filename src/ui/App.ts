@@ -1,5 +1,11 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import {
+  fetchWeatherForLocation,
+  formatWeatherCompact,
+  formatWeatherLines,
+  weatherQueryFromPolygon,
+} from "../api/weather";
 import { CelestialSystem } from "./world/celestial";
 import { loadCountryOverlays } from "./world/countries";
 import {
@@ -31,6 +37,13 @@ export class App {
   private countryMeshes: THREE.Object3D[] = [];
   private countryPolygons: CountryPolygon[] = [];
   private hoveredCountry: THREE.Object3D | null = null;
+
+  private hoverFetchGen = 0;
+  private hoveredWeatherCountryId: string | null = null;
+  private hoverWeatherDebounce: ReturnType<typeof setTimeout> | null = null;
+  private hoverFetchAbort: AbortController | null = null;
+  private lastClientX = 0;
+  private lastClientY = 0;
 
   private countryBaseMaterial: THREE.LineBasicMaterial;
   private countryHoverMaterial: THREE.LineBasicMaterial;
@@ -123,7 +136,9 @@ export class App {
     this.tooltipEl.style.background = "rgba(0, 0, 0, 0.8)";
     this.tooltipEl.style.color = "#ffffff";
     this.tooltipEl.style.fontSize = "12px";
-    this.tooltipEl.style.whiteSpace = "nowrap";
+    this.tooltipEl.style.whiteSpace = "pre-line";
+    this.tooltipEl.style.maxWidth = "min(280px, 70vw)";
+    this.tooltipEl.style.lineHeight = "1.35";
     this.tooltipEl.style.display = "none";
     document.body.appendChild(this.tooltipEl);
 
@@ -191,12 +206,15 @@ export class App {
   }
 
   private onPointerMove(event: MouseEvent) {
+    this.lastClientX = event.clientX;
+    this.lastClientY = event.clientY;
     const rect = this.renderer.domElement.getBoundingClientRect();
     this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
     if (!this.globe) {
+      this.clearHoverWeatherState();
       this.hideTooltip();
       this.setHoveredCountry(null);
       return;
@@ -204,6 +222,7 @@ export class App {
 
     const hit = this.raycaster.intersectObject(this.globe, false);
     if (hit.length === 0) {
+      this.clearHoverWeatherState();
       this.hideTooltip();
       this.setHoveredCountry(null);
       return;
@@ -211,6 +230,7 @@ export class App {
 
     const latLon = this.getLatLonFromGlobeHit(hit[0].point);
     if (!latLon) {
+      this.clearHoverWeatherState();
       this.hideTooltip();
       this.setHoveredCountry(null);
       return;
@@ -219,13 +239,19 @@ export class App {
     const country = findCountryAtLatLon(this.countryPolygons, lat, lon);
 
     if (!country) {
+      this.clearHoverWeatherState();
       this.hideTooltip();
       this.setHoveredCountry(null);
       return;
     }
 
     this.setHoveredCountry(country.id);
-    this.updateTooltip(event.clientX, event.clientY, country.displayName);
+    if (country.id !== this.hoveredWeatherCountryId) {
+      this.hoveredWeatherCountryId = country.id;
+      this.scheduleHoverWeather(country);
+    } else {
+      this.updateTooltipPosition(event.clientX, event.clientY);
+    }
   }
 
   private onClick(event: MouseEvent) {
@@ -306,8 +332,9 @@ export class App {
 
     this.isDetailView = true;
     this.selectedCountryName = selectedPolygon.id;
+    this.clearHoverWeatherState(false);
     this.hideTooltip();
-    this.showCountryPanel(selectedPolygon.displayName);
+    this.showCountryPanel(selectedPolygon);
 
     const center = getCountryCenter(this.countryPolygons, countryId);
     if (center) this.startCameraAnimationToLatLon(center.lat, center.lon);
@@ -338,50 +365,165 @@ export class App {
     };
   }
 
-  private updateTooltip(x: number, y: number, text: string) {
+  /**
+   * @param abortInFlight - Set false when opening the detail panel so an
+   *   in-flight hover request can finish and warm the cache (avoids 429s and
+   *   duplicate upstream calls for the same location).
+   */
+  private clearHoverWeatherState(abortInFlight = true) {
+    this.hoverFetchGen++;
+    this.hoveredWeatherCountryId = null;
+    if (this.hoverWeatherDebounce !== null) {
+      clearTimeout(this.hoverWeatherDebounce);
+      this.hoverWeatherDebounce = null;
+    }
+    if (abortInFlight && this.hoverFetchAbort) {
+      this.hoverFetchAbort.abort();
+    }
+    this.hoverFetchAbort = null;
+  }
+
+  private scheduleHoverWeather(country: CountryPolygon) {
+    this.hoverFetchGen++;
+    const gen = this.hoverFetchGen;
+
+    if (this.hoverWeatherDebounce !== null) {
+      clearTimeout(this.hoverWeatherDebounce);
+      this.hoverWeatherDebounce = null;
+    }
+    if (this.hoverFetchAbort) {
+      this.hoverFetchAbort.abort();
+      this.hoverFetchAbort = null;
+    }
+
+    this.updateTooltipLines(this.lastClientX, this.lastClientY, [
+      country.displayName,
+      "Loading weather…",
+    ]);
+
+    this.hoverWeatherDebounce = window.setTimeout(async () => {
+      this.hoverWeatherDebounce = null;
+      if (gen !== this.hoverFetchGen) return;
+
+      const ac = new AbortController();
+      this.hoverFetchAbort = ac;
+      try {
+        const w = await fetchWeatherForLocation(
+          weatherQueryFromPolygon(country),
+          ac.signal
+        );
+        if (gen !== this.hoverFetchGen) return;
+        this.updateTooltipLines(this.lastClientX, this.lastClientY, [
+          country.displayName,
+          formatWeatherCompact(w),
+        ]);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        if (gen !== this.hoverFetchGen) return;
+        this.updateTooltipLines(this.lastClientX, this.lastClientY, [
+          country.displayName,
+          "Weather unavailable",
+        ]);
+      } finally {
+        if (this.hoverFetchAbort === ac) this.hoverFetchAbort = null;
+      }
+    }, 320);
+  }
+
+  private updateTooltipLines(x: number, y: number, lines: string[]) {
     if (!this.tooltipEl) return;
-    this.tooltipEl.textContent = text;
+    this.tooltipEl.textContent = lines.join("\n");
+    this.tooltipEl.style.display = "block";
+    this.updateTooltipPosition(x, y);
+  }
+
+  private updateTooltipPosition(x: number, y: number) {
+    if (!this.tooltipEl) return;
     this.tooltipEl.style.left = `${x + 10}px`;
     this.tooltipEl.style.top = `${y + 10}px`;
-    this.tooltipEl.style.display = "block";
   }
 
   private hideTooltip() {
     if (this.tooltipEl) this.tooltipEl.style.display = "none";
   }
 
-  private showCountryPanel(countryName: string) {
+  private showCountryPanel(polygon: CountryPolygon) {
     if (!this.countryPanelEl) return;
-    this.countryPanelEl.style.display = "block";
-    this.countryPanelEl.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <h2 style="margin:0; font-size:16px;">${countryName}</h2>
-        <button id="country-panel-close"
-          style="
-            border:none;
-            background:rgba(15,23,42,0.8);
-            color:#9ca3af;
-            padding:4px 8px;
-            border-radius:999px;
-            font-size:11px;
-            cursor:pointer;
-          "
-        >
-          Back to globe
-        </button>
-      </div>
-      <div style="font-size:13px; opacity:0.9;">
-        <p style="margin: 0 0 4px;">Current weather: <strong>--</strong></p>
-        <p style="margin: 0 0 4px;">Temperature: <strong>-- °C</strong></p>
-        <p style="margin: 0 0 4px;">Humidity: <strong>-- %</strong></p>
-        <p style="margin: 0;">Wind: <strong>-- km/h</strong></p>
-      </div>
-    `;
+    const root = this.countryPanelEl;
+    root.replaceChildren();
 
-    const closeBtn = this.countryPanelEl.querySelector(
-      "#country-panel-close"
-    ) as HTMLButtonElement | null;
-    if (closeBtn) closeBtn.onclick = () => this.exitDetailView();
+    const header = document.createElement("div");
+    header.style.display = "flex";
+    header.style.justifyContent = "space-between";
+    header.style.alignItems = "center";
+    header.style.marginBottom = "8px";
+
+    const titleEl = document.createElement("h2");
+    titleEl.style.margin = "0";
+    titleEl.style.fontSize = "16px";
+    titleEl.textContent = polygon.displayName;
+
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "Back to globe";
+    closeBtn.style.border = "none";
+    closeBtn.style.background = "rgba(15,23,42,0.8)";
+    closeBtn.style.color = "#9ca3af";
+    closeBtn.style.padding = "4px 8px";
+    closeBtn.style.borderRadius = "999px";
+    closeBtn.style.fontSize = "11px";
+    closeBtn.style.cursor = "pointer";
+    closeBtn.onclick = () => this.exitDetailView();
+
+    header.appendChild(titleEl);
+    header.appendChild(closeBtn);
+
+    const body = document.createElement("div");
+    body.style.fontSize = "13px";
+    body.style.opacity = "0.9";
+
+    const loading = document.createElement("p");
+    loading.style.margin = "0 0 4px";
+    loading.textContent = "Loading weather…";
+    body.appendChild(loading);
+
+    root.appendChild(header);
+    root.appendChild(body);
+    root.style.display = "block";
+
+    void (async () => {
+      try {
+        const w = await fetchWeatherForLocation(
+          weatherQueryFromPolygon(polygon)
+        );
+        if (!this.countryPanelEl || this.countryPanelEl.style.display === "none")
+          return;
+        body.replaceChildren();
+
+        const locP = document.createElement("p");
+        locP.style.margin = "0 0 6px";
+        locP.style.fontSize = "12px";
+        locP.style.opacity = "0.75";
+        locP.textContent = w.locationLabel;
+        body.appendChild(locP);
+
+        const detailLines = formatWeatherLines(w);
+        for (let i = 0; i < detailLines.length; i++) {
+          const p = document.createElement("p");
+          p.style.margin = i === detailLines.length - 1 ? "0" : "0 0 4px";
+          p.textContent = detailLines[i];
+          body.appendChild(p);
+        }
+      } catch {
+        if (!this.countryPanelEl || this.countryPanelEl.style.display === "none")
+          return;
+        body.replaceChildren();
+        const err = document.createElement("p");
+        err.style.margin = "0";
+        err.textContent =
+          "Could not load weather. Is Docker running and .env configured?";
+        body.appendChild(err);
+      }
+    })();
   }
 
   private hideCountryPanel() {
