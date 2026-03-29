@@ -51,7 +51,7 @@ def weather(city_name: str):
             f"{BASE_URL}/{city_name}",
             params={
                 "unitGroup": "metric",
-                "include": "current",
+                "include": "current,days",
                 "key": API_KEY,
                 "contentType": "json",
             },
