@@ -3,7 +3,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import {
   fetchWeatherForLocation,
   formatWeatherCompact,
-  formatWeatherLines,
+  renderWeatherDetail,
   weatherQueryFromPolygon,
 } from "../api/weather";
 import { CelestialSystem } from "./world/celestial";
@@ -498,21 +498,7 @@ export class App {
         if (!this.countryPanelEl || this.countryPanelEl.style.display === "none")
           return;
         body.replaceChildren();
-
-        const locP = document.createElement("p");
-        locP.style.margin = "0 0 6px";
-        locP.style.fontSize = "12px";
-        locP.style.opacity = "0.75";
-        locP.textContent = w.locationLabel;
-        body.appendChild(locP);
-
-        const detailLines = formatWeatherLines(w);
-        for (let i = 0; i < detailLines.length; i++) {
-          const p = document.createElement("p");
-          p.style.margin = i === detailLines.length - 1 ? "0" : "0 0 4px";
-          p.textContent = detailLines[i];
-          body.appendChild(p);
-        }
+        renderWeatherDetail(body, w);
       } catch {
         if (!this.countryPanelEl || this.countryPanelEl.style.display === "none")
           return;
