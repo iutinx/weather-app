@@ -43,7 +43,7 @@
       body {
         margin: 0;
         min-height: 100vh;
-        background: url("/background.jpg") center top / cover no-repeat fixed;
+        background: url("/background2.jpg") center top / cover no-repeat scroll;
         background-color: #03040a;
         color: var(--text);
         line-height: 1.5;
@@ -374,6 +374,280 @@
         border: 1px solid rgba(255, 255, 255, 0.22);
       }
 
+      .city-search-section {
+        width: min(960px, 94vw);
+        margin: 64px auto 72px;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(16px) saturate(150%);
+        -webkit-backdrop-filter: blur(16px) saturate(150%);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        color: rgba(255, 255, 255, 0.92);
+        overflow: hidden;
+      }
+
+      .city-search-window-bar {
+        height: 46px;
+        background: rgba(255, 255, 255, 0.16);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+        padding: 0 16px;
+      }
+
+      .city-search-window-title {
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.85);
+        font-weight: 650;
+      }
+
+      .city-search-inner {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 56px 18px 70px;
+        text-align: center;
+      }
+
+      .city-search-heading {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 820;
+        letter-spacing: -0.03em;
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      .city-search-subtitle {
+        margin: 12px auto 0;
+        max-width: 560px;
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 0.98rem;
+      }
+
+      .city-search-form {
+        max-width: 460px;
+        margin: 22px auto 0;
+        display: flex;
+        gap: 12px;
+      }
+
+      .city-search-input {
+        flex: 1;
+        background: transparent;
+        border: 0.5px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px;
+        padding: 12px 14px;
+        color: rgba(255, 255, 255, 0.92);
+        outline: none;
+        font-size: 14px;
+      }
+
+      .city-search-input::placeholder {
+        color: rgba(255, 255, 255, 0.35);
+      }
+
+      .city-search-button {
+        background: transparent;
+        border: 0.5px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px;
+        padding: 12px 16px;
+        color: rgba(255, 255, 255, 0.92);
+        font-weight: 650;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 108px;
+      }
+
+      .city-search-button:hover {
+        transform: scale(1.02);
+        opacity: 0.92;
+      }
+
+      .city-result {
+        max-width: 680px;
+        margin: 26px auto 0;
+        padding: 22px 18px 12px;
+        border-radius: 12px;
+      }
+
+      .city-divider {
+        height: 0;
+        border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+        margin: 18px 0;
+      }
+
+      .city-result-error {
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 14px;
+      }
+
+      .city-loading {
+        color: rgba(255, 255, 255, 0.35);
+        font-size: 14px;
+      }
+
+      .city-hero {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .city-hero-top {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .city-name {
+        font-size: 20px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      .city-country {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.3);
+        font-weight: 600;
+      }
+
+      .city-time {
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 13px;
+      }
+
+      .city-temp {
+        font-size: 56px;
+        font-weight: 300;
+        line-height: 1;
+        letter-spacing: -0.04em;
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      .city-feels-line {
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 14px;
+      }
+
+      .city-description {
+        font-size: 13px;
+        font-style: italic;
+        color: rgba(255, 255, 255, 0.3);
+      }
+
+      .city-section-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgba(255, 255, 255, 0.25);
+        margin: 0 0 12px;
+        font-weight: 650;
+      }
+
+      .city-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+
+      .city-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .city-stat-card {
+        border: 0.5px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        padding: 12px 12px 11px;
+      }
+
+      .city-stat-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgba(255, 255, 255, 0.3);
+        margin-bottom: 8px;
+        font-weight: 650;
+      }
+
+      .city-stat-value {
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .city-two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .city-wind-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .city-sun-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .city-forecast {
+        margin-top: 16px;
+      }
+
+      .city-forecast-row {
+        display: grid;
+        grid-template-columns: minmax(78px, 1fr) 1.35fr 0.95fr 0.95fr 1.35fr;
+        gap: 10px;
+        padding: 14px 0;
+        border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+        align-items: start;
+      }
+
+      .city-forecast-row-head {
+        padding-top: 8px;
+        padding-bottom: 10px;
+        border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.25);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 650;
+      }
+
+      .city-forecast-cell {
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 13px;
+      }
+
+      .city-forecast-cell--muted {
+        color: rgba(255, 255, 255, 0.3);
+      }
+
+      @media (max-width: 720px) {
+        .city-grid-4 {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .city-two-col {
+          grid-template-columns: 1fr;
+        }
+        .city-sun-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .city-forecast-row {
+          grid-template-columns: 1fr 1fr;
+        }
+        .city-forecast-cell-temp {
+          grid-column: 1 / -1;
+        }
+      }
+
       .how-section {
         padding: 72px 18px 92px;
         position: relative;
@@ -491,6 +765,40 @@
                 <p class="globe-caption">Interactive · drag to explore</p>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section id="city-search" class="city-search-section">
+          <div class="city-search-window-bar">
+            <div class="window-dots" aria-hidden="true">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <div class="city-search-window-title">Weather Globe</div>
+          </div>
+
+          <div class="city-search-inner">
+            <h2 class="city-search-heading">Explore any city</h2>
+            <p class="city-search-subtitle">
+              Search a city name to see current conditions and a 7-day forecast.
+            </p>
+
+            <form id="city-search-form" class="city-search-form">
+              <input
+                id="city-search-input"
+                class="city-search-input"
+                type="text"
+                placeholder="Type a city name (e.g., London)"
+                autoComplete="off"
+                spellCheck="false"
+              />
+              <button id="city-search-button" class="city-search-button" type="submit">
+                Search
+              </button>
+            </form>
+
+            <div id="city-search-result" class="city-result" hidden></div>
           </div>
         </section>
 

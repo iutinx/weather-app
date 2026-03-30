@@ -16,6 +16,8 @@ export type WeatherData = {
     visibility: number | null;
     cloudcover: number | null;
     uvindex: number | null;
+    solarradiation: number | null;
+    precipprob: number | null;
     windspeed: number | null;
     windgust: number | null;
     winddirDeg: number | null;
@@ -38,6 +40,10 @@ export type WeatherData = {
     dayName: string;
     datetime: string;
     conditionsShort: string;
+    precipprob: number | null;
+    precipMm: number | null;
+    tempmin: number | null;
+    tempmax: number | null;
     precipLabel: string;
     tempRangeLabel: string;
   }>;
@@ -55,6 +61,8 @@ type ApiCurrent = {
   visibility?: number;
   cloudcover?: number;
   uvindex?: number;
+  solarradiation?: number;
+  precipprob?: number;
   windspeed?: number;
   windgust?: number;
   winddir?: number;
@@ -69,6 +77,7 @@ type ApiDay = {
   datetime?: string;
   conditions?: string;
   precip?: number;
+  precipprob?: number;
   tempmin?: number;
   tempmax?: number;
 };
@@ -241,6 +250,7 @@ function parseWeatherFromApi(
   fallbackQuery: string
 ): WeatherData {
   const cur = data.currentConditions ?? {};
+  const curAny = cur as ApiCurrent & Record<string, unknown>;
   const tz = data.tzoffset;
   const datetime = cur.datetime;
   const windDir = numOrNull(cur.winddir);
@@ -256,10 +266,15 @@ function parseWeatherFromApi(
         ? `${roundTemp(tmin)}–${roundTemp(tmax)} °C`
         : "—";
     const precip = numOrNull(d.precip);
+    const precipprob = numOrNull((d as any).precipprob);
     return {
       dayName: forecastDayLabel(String(d.datetime ?? ""), i),
       datetime: String(d.datetime ?? ""),
       conditionsShort: shortConditions(d.conditions),
+      precipprob,
+      precipMm: precip,
+      tempmin: tmin,
+      tempmax: tmax,
       precipLabel: precipDisplay(precip),
       tempRangeLabel: range,
     };
@@ -286,6 +301,8 @@ function parseWeatherFromApi(
       visibility: numOrNull(cur.visibility),
       cloudcover: numOrNull(cur.cloudcover),
       uvindex: numOrNull(cur.uvindex),
+      solarradiation: numOrNull((curAny as any).solarradiation),
+      precipprob: numOrNull((curAny as any).precipprob),
       windspeed: numOrNull(cur.windspeed),
       windgust: numOrNull(cur.windgust),
       winddirDeg: windDir,
