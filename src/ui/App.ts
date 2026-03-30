@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import {
   fetchWeatherForLocation,
+  type WeatherData,
   formatWeatherCompact,
   renderWeatherDetail,
   weatherQueryFromPolygon,
@@ -31,6 +32,9 @@ export class App {
   private globe: THREE.Mesh | null = null;
   private globeGlow: THREE.Mesh | null = null;
   private celestialSystem: CelestialSystem;
+
+  private cityAbortController: AbortController | null = null;
+  private cityRequestId = 0;
 
   private raycaster = new THREE.Raycaster();
   private mouse = new THREE.Vector2();
@@ -122,6 +126,7 @@ export class App {
     this.loadSceneAssets();
     this.bindEvents();
     this.observeContainerSize();
+    this.bindCityWeatherSearch();
     this.animate();
   }
 
@@ -198,6 +203,354 @@ export class App {
     this.countryPanelEl.style.zIndex = "20";
     this.countryPanelEl.style.display = "none";
     document.body.appendChild(this.countryPanelEl);
+  }
+
+  private bindCityWeatherSearch() {
+    const doc = document;
+    const form = doc.getElementById("city-search-form") as
+      | HTMLFormElement
+      | null;
+    const input = doc.getElementById("city-search-input") as
+      | HTMLInputElement
+      | null;
+    const result = doc.getElementById("city-search-result") as
+      | HTMLDivElement
+      | null;
+    if (!form || !input || !result) return;
+
+    const showLoading = () => {
+      result.hidden = false;
+      result.replaceChildren();
+      const el = doc.createElement("div");
+      el.className = "city-loading";
+      el.textContent = "Loading…";
+      result.appendChild(el);
+    };
+
+    const showError = (message: string) => {
+      result.hidden = false;
+      result.replaceChildren();
+      const el = doc.createElement("div");
+      el.className = "city-result-error";
+      el.textContent = message;
+      result.appendChild(el);
+    };
+
+    const splitLocation = (locationLabel: string): { city: string; country: string } => {
+      const parts = locationLabel.split(",").map((p) => p.trim()).filter(Boolean);
+      const city = parts[0] ?? locationLabel;
+      const country = parts.slice(1).join(", ");
+      return { city, country: country || "—" };
+    };
+
+    const statCard = (
+      label: string,
+      value: string
+    ): HTMLElement => {
+      const card = doc.createElement("div");
+      card.className = "city-stat-card";
+
+      const l = doc.createElement("div");
+      l.className = "city-stat-label";
+      l.textContent = label;
+
+      const v = doc.createElement("div");
+      v.className = "city-stat-value";
+      v.textContent = value;
+
+      card.appendChild(l);
+      card.appendChild(v);
+      return card;
+    };
+
+    const formatMaybeTemp = (n: number | null | undefined): string => {
+      return n == null || Number.isNaN(n) ? "—" : `${Math.round(n)}°C`;
+    };
+
+    const formatMaybeTempRange = (
+      min: number | null,
+      max: number | null
+    ): string => {
+      if (min == null || max == null) return "—";
+      if (Number.isNaN(min) || Number.isNaN(max)) return "—";
+      return `${Math.round(min)}–${Math.round(max)}°C`;
+    };
+
+    const formatMaybePercent = (n: number | null): string => {
+      return n == null || Number.isNaN(n) ? "—" : `${Math.round(n)}%`;
+    };
+
+    const formatMaybePrecipMm = (mm: number | null): string => {
+      if (mm == null || Number.isNaN(mm)) return "—";
+      if (mm === 0) return "—";
+      return `${Math.round(mm)} mm`;
+    };
+
+    const render = (data: WeatherData) => {
+      result.hidden = false;
+      result.replaceChildren();
+
+      const { city, country } = splitLocation(data.locationLabel);
+
+      const hero = doc.createElement("div");
+      hero.className = "city-hero";
+
+      const top = doc.createElement("div");
+      top.className = "city-hero-top";
+      const cityEl = doc.createElement("div");
+      cityEl.className = "city-name";
+      cityEl.textContent = city;
+
+      const countryEl = doc.createElement("div");
+      countryEl.className = "city-country";
+      countryEl.textContent = country;
+
+      top.appendChild(cityEl);
+      top.appendChild(countryEl);
+
+      const timeEl = doc.createElement("div");
+      timeEl.className = "city-time";
+      timeEl.textContent = data.localTimeDisplay;
+
+      const tempEl = doc.createElement("div");
+      tempEl.className = "city-temp";
+      tempEl.textContent =
+        data.current.temp == null ? "—" : `${Math.round(data.current.temp)}°C`;
+
+      const hi = data.todayHigh;
+      const lo = data.todayLow;
+      const feelslike = formatMaybeTemp(data.current.feelslike);
+
+      const hiLoText =
+        hi == null || lo == null
+          ? "High/Low —"
+          : `High ${Math.round(hi)}° / Low ${Math.round(lo)}°`;
+
+      const feelsLine = doc.createElement("div");
+      feelsLine.className = "city-feels-line";
+      feelsLine.textContent = `${feelslike} · ${data.current.conditions} · ${hiLoText}`;
+
+      const desc = data.days[0]?.conditionsShort ?? data.current.conditions;
+      const descEl = doc.createElement("div");
+      descEl.className = "city-description";
+      descEl.textContent = desc;
+
+      hero.appendChild(top);
+      hero.appendChild(timeEl);
+      hero.appendChild(tempEl);
+      hero.appendChild(feelsLine);
+      hero.appendChild(descEl);
+
+      const atmoLabel = doc.createElement("div");
+      atmoLabel.className = "city-section-label";
+      atmoLabel.textContent = "Atmosphere";
+
+      const atmoGrid = doc.createElement("div");
+      atmoGrid.className = "city-grid-4";
+      atmoGrid.appendChild(
+        statCard(
+          "humidity",
+          data.current.humidity == null ? "—" : `${Math.round(data.current.humidity)}%`
+        )
+      );
+      atmoGrid.appendChild(
+        statCard(
+          "dew",
+          data.current.dew == null ? "—" : `${Math.round(data.current.dew)}°C`
+        )
+      );
+      atmoGrid.appendChild(
+        statCard(
+          "pressure",
+          data.current.pressure == null ? "—" : `${Math.round(data.current.pressure)} hPa`
+        )
+      );
+      atmoGrid.appendChild(
+        statCard(
+          "visibility",
+          data.current.visibility == null ? "—" : `${Math.round(data.current.visibility)} km`
+        )
+      );
+      atmoGrid.appendChild(
+        statCard(
+          "cloudcover",
+          data.current.cloudcover == null ? "—" : `${Math.round(data.current.cloudcover)}%`
+        )
+      );
+      atmoGrid.appendChild(
+        statCard(
+          "uvindex",
+          data.current.uvindex == null ? "—" : `${Math.round(data.current.uvindex)}`
+        )
+      );
+      atmoGrid.appendChild(
+        statCard(
+          "solarradiation",
+          data.current.solarradiation == null ? "—" : `${Math.round(data.current.solarradiation)}`
+        )
+      );
+      atmoGrid.appendChild(
+        statCard(
+          "precipprob",
+          formatMaybePercent(data.current.precipprob)
+        )
+      );
+
+      const windSunWrap = doc.createElement("div");
+      windSunWrap.className = "city-two-col";
+
+      const windSection = doc.createElement("div");
+      const windLabel = doc.createElement("div");
+      windLabel.className = "city-section-label";
+      windLabel.textContent = "Wind";
+      windSection.appendChild(windLabel);
+
+      const windGrid = doc.createElement("div");
+      windGrid.className = "city-wind-grid";
+      const wind = data.current;
+      windGrid.appendChild(
+        statCard(
+          "windspeed",
+          wind.windspeed == null ? "—" : `${Math.round(wind.windspeed)} km/h`
+        )
+      );
+      windGrid.appendChild(
+        statCard(
+          "windgust",
+          wind.windgust == null ? "—" : `${Math.round(wind.windgust)} km/h`
+        )
+      );
+      windGrid.appendChild(statCard("winddir", wind.winddirLabel));
+      windSection.appendChild(windGrid);
+
+      const sunSection = doc.createElement("div");
+      const sunLabel = doc.createElement("div");
+      sunLabel.className = "city-section-label";
+      sunLabel.textContent = "Sun & Moon";
+      sunSection.appendChild(sunLabel);
+
+      const sunGrid = doc.createElement("div");
+      sunGrid.className = "city-sun-grid";
+      sunGrid.appendChild(statCard("sunrise", wind.sunrise));
+      sunGrid.appendChild(statCard("sunset", wind.sunset));
+      sunGrid.appendChild(statCard("day length", wind.dayLengthLabel));
+      sunGrid.appendChild(statCard("moonphase", wind.moonphaseLabel));
+      sunSection.appendChild(sunGrid);
+
+      windSunWrap.appendChild(windSection);
+      windSunWrap.appendChild(sunSection);
+
+      const forecast = doc.createElement("div");
+      forecast.className = "city-forecast";
+
+      const forecastHead = doc.createElement("div");
+      forecastHead.className = "city-forecast-row";
+      forecastHead.style.borderBottom = "0.5px solid rgba(255,255,255,0.08)";
+
+      const dayHead = doc.createElement("div");
+      dayHead.className = "city-forecast-row-head";
+      dayHead.textContent = "Day";
+
+      const condHead = doc.createElement("div");
+      condHead.className = "city-forecast-row-head";
+      condHead.textContent = "Condition";
+
+      const probHead = doc.createElement("div");
+      probHead.className = "city-forecast-row-head";
+      probHead.textContent = "Precip %";
+
+      const precipHead = doc.createElement("div");
+      precipHead.className = "city-forecast-row-head";
+      precipHead.textContent = "Precip mm";
+
+      const tempHead = doc.createElement("div");
+      tempHead.className = "city-forecast-row-head";
+      tempHead.textContent = "Temp";
+
+      forecastHead.appendChild(dayHead);
+      forecastHead.appendChild(condHead);
+      forecastHead.appendChild(probHead);
+      forecastHead.appendChild(precipHead);
+      forecastHead.appendChild(tempHead);
+      forecast.appendChild(forecastHead);
+
+      const days = data.days.slice(0, 7);
+      days.forEach((d, i) => {
+        const row = doc.createElement("div");
+        row.className = "city-forecast-row";
+
+        const day = doc.createElement("div");
+        day.className = "city-forecast-cell";
+        day.textContent = i === 0 ? "Today" : d.dayName;
+
+        const cond = doc.createElement("div");
+        cond.className = "city-forecast-cell";
+        cond.textContent = d.conditionsShort;
+
+        const prob = doc.createElement("div");
+        prob.className = "city-forecast-cell city-forecast-cell--muted";
+        prob.textContent = formatMaybePercent(d.precipprob);
+
+        const precip = doc.createElement("div");
+        precip.className = "city-forecast-cell city-forecast-cell--muted";
+        precip.textContent = formatMaybePrecipMm(d.precipMm);
+
+        const temp = doc.createElement("div");
+        temp.className =
+          "city-forecast-cell city-forecast-cell--muted city-forecast-cell-temp";
+        temp.textContent = formatMaybeTempRange(d.tempmin, d.tempmax);
+
+        row.appendChild(day);
+        row.appendChild(cond);
+        row.appendChild(prob);
+        row.appendChild(precip);
+        row.appendChild(temp);
+        forecast.appendChild(row);
+      });
+
+      const divider1 = doc.createElement("div");
+      divider1.className = "city-divider";
+      const divider2 = doc.createElement("div");
+      divider2.className = "city-divider";
+
+      result.appendChild(hero);
+      result.appendChild(divider1);
+      result.appendChild(atmoLabel);
+      result.appendChild(atmoGrid);
+      result.appendChild(divider2);
+      result.appendChild(windSunWrap);
+      result.appendChild(forecast);
+    };
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const query = input.value.trim();
+      if (!query) {
+        showError("Please enter a city name.");
+        return;
+      }
+
+      this.cityAbortController?.abort();
+      this.cityAbortController = new AbortController();
+      const reqId = ++this.cityRequestId;
+
+      showLoading();
+      try {
+        const data = await fetchWeatherForLocation(
+          query,
+          this.cityAbortController.signal
+        );
+        if (reqId !== this.cityRequestId) return;
+        render(data);
+      } catch (err) {
+        if (reqId !== this.cityRequestId) return;
+        const msg =
+          err instanceof Error && err.message
+            ? err.message
+            : "City not found.";
+        showError(msg);
+      }
+    });
   }
 
   private bindEvents() {
