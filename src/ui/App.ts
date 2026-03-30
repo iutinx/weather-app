@@ -70,21 +70,18 @@ export class App {
 
   private tooltipEl: HTMLDivElement | null = null;
   private countryPanelEl: HTMLDivElement | null = null;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(private container: HTMLElement) {
     this.scene = new THREE.Scene();
     this.worldGroup = new THREE.Group();
     this.scene.add(this.worldGroup);
     this.scene.add(createStarfield());
-    this.camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
+    const { width, height } = this.readContainerSize();
+    this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.fitRenderer();
     this.container.appendChild(this.renderer.domElement);
 
     this.countryBaseMaterial = new THREE.LineBasicMaterial({
@@ -124,7 +121,30 @@ export class App {
 
     this.loadSceneAssets();
     this.bindEvents();
+    this.observeContainerSize();
     this.animate();
+  }
+
+  private readContainerSize(): { width: number; height: number } {
+    const w = Math.max(1, Math.floor(this.container.clientWidth));
+    const h = Math.max(1, Math.floor(this.container.clientHeight));
+    return { width: w, height: h };
+  }
+
+  private fitRenderer() {
+    const { width, height } = this.readContainerSize();
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(width, height, false);
+    const canvas = this.renderer.domElement;
+    canvas.style.display = "block";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+  }
+
+  private observeContainerSize() {
+    this.resizeObserver = new ResizeObserver(() => this.fitRenderer());
+    this.resizeObserver.observe(this.container);
   }
 
   private setupOverlayElements() {
@@ -180,7 +200,7 @@ export class App {
     this.renderer.domElement.addEventListener("click", (event) => {
       this.onClick(event);
     });
-    window.addEventListener("resize", () => this.onWindowResize());
+    window.addEventListener("resize", () => this.fitRenderer());
   }
 
   private async loadSceneAssets() {
@@ -514,12 +534,6 @@ export class App {
 
   private hideCountryPanel() {
     if (this.countryPanelEl) this.countryPanelEl.style.display = "none";
-  }
-
-  private onWindowResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
   private animate() {
