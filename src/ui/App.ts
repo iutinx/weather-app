@@ -151,10 +151,17 @@ export class App {
     this.tooltipEl = document.createElement("div");
     this.tooltipEl.style.position = "fixed";
     this.tooltipEl.style.pointerEvents = "none";
-    this.tooltipEl.style.padding = "4px 8px";
-    this.tooltipEl.style.borderRadius = "4px";
-    this.tooltipEl.style.background = "rgba(0, 0, 0, 0.8)";
-    this.tooltipEl.style.color = "#ffffff";
+    this.tooltipEl.style.padding = "6px 10px";
+    this.tooltipEl.style.borderRadius = "12px";
+    this.tooltipEl.style.background = "rgba(255, 255, 255, 0.95)";
+    this.tooltipEl.style.border = "1px solid rgba(229, 231, 235, 1)";
+    this.tooltipEl.style.backdropFilter = "none";
+    (this.tooltipEl.style as CSSStyleDeclaration & {
+      WebkitBackdropFilter?: string;
+    }).WebkitBackdropFilter = "none";
+    this.tooltipEl.style.boxShadow =
+      "0 18px 60px rgba(0, 0, 0, 0.10)";
+    this.tooltipEl.style.color = "#111827";
     this.tooltipEl.style.fontSize = "12px";
     this.tooltipEl.style.whiteSpace = "pre-line";
     this.tooltipEl.style.maxWidth = "min(280px, 70vw)";
@@ -173,18 +180,18 @@ export class App {
     this.countryPanelEl.style.maxHeight = "80vh";
     this.countryPanelEl.style.overflowY = "auto";
     this.countryPanelEl.style.padding = "14px 18px";
-    this.countryPanelEl.style.borderRadius = "16px";
-    this.countryPanelEl.style.background =
-      "linear-gradient(135deg, rgba(15,23,42,0.55), rgba(15,23,42,0.25))";
-    this.countryPanelEl.style.backdropFilter = "blur(20px)";
+    this.countryPanelEl.style.borderRadius = "24px";
+    this.countryPanelEl.style.background = "rgba(255, 255, 255, 0.95)";
+    this.countryPanelEl.style.backdropFilter = "none";
     (
       this.countryPanelEl.style as CSSStyleDeclaration & {
         WebkitBackdropFilter?: string;
       }
-    ).WebkitBackdropFilter = "blur(20px)";
-    this.countryPanelEl.style.border = "1px solid rgba(148, 163, 184, 0.45)";
-    this.countryPanelEl.style.boxShadow = "0 24px 60px rgba(15, 23, 42, 0.72)";
-    this.countryPanelEl.style.color = "#e5e7eb";
+    ).WebkitBackdropFilter = "none";
+    this.countryPanelEl.style.border = "1px solid rgba(229, 231, 235, 1)";
+    this.countryPanelEl.style.boxShadow =
+      "0 24px 70px rgba(0, 0, 0, 0.16)";
+    this.countryPanelEl.style.color = "#111827";
     this.countryPanelEl.style.fontFamily =
       "-apple-system, system-ui, BlinkMacSystemFont, 'SF Pro Text', sans-serif";
     this.countryPanelEl.style.fontSize = "15px";
