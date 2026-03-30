@@ -6,41 +6,362 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
     />
+    <meta
+      name="description"
+      content="Explore a 3D globe with live weather: hover countries for forecasts, orbit the Earth, and watch the sun and moon move with the time of day."
+    />
     <title>Toon Weather Globe</title>
     <style>
-      html, body, #app {
-        height: 100%;
+      :root {
+        --bg-deep: #0b1020;
+        --bg-panel: rgba(15, 23, 42, 0.72);
+        --text: #e2e8f0;
+        --text-muted: #94a3b8;
+        --accent: #38bdf8;
+        --accent-soft: rgba(56, 189, 248, 0.2);
+        --border: rgba(148, 163, 184, 0.25);
+        --globe-radius: 20px;
+        font-family:
+          "SF Pro Text",
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
         margin: 0;
-        background: #f5f7fb;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        min-height: 100vh;
+        background: var(--bg-deep);
+        color: var(--text);
+        line-height: 1.5;
       }
-      .toolbar {
-        position: absolute;
-        top: 12px;
-        left: 12px;
+
+      #app {
+        min-height: 100vh;
         display: flex;
-        gap: 8px;
-        padding: 8px 10px;
-        background: rgba(255,255,255,0.8);
+        flex-direction: column;
+      }
+
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.75rem clamp(1rem, 4vw, 2rem);
+        background: linear-gradient(
+          180deg,
+          rgba(11, 16, 32, 0.94) 0%,
+          rgba(11, 16, 32, 0.78) 100%
+        );
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        font-size: 1rem;
+      }
+
+      .brand-mark {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, #fef08a, #f97316);
+        box-shadow: 0 0 12px rgba(251, 191, 36, 0.55);
+      }
+
+      .site-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .site-nav a {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.875rem;
+        padding: 0.4rem 0.65rem;
         border-radius: 8px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        transition: color 0.15s, background 0.15s;
       }
-      .toolbar button {
-        padding: 6px 10px;
-        border-radius: 6px;
-        border: 1px solid #00000012;
-        background: #ffffff;
+
+      .site-nav a:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .site-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .hero {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: clamp(1.25rem, 3vw, 2.5rem);
+        padding: clamp(1.25rem, 3vw, 2.5rem);
+        max-width: 1280px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      @media (min-width: 900px) {
+        .hero {
+          grid-template-columns: minmax(260px, 1fr) minmax(0, 1.35fr);
+          align-items: center;
+        }
+      }
+
+      .hero-copy h1 {
+        margin: 0 0 0.5rem;
+        font-size: clamp(1.75rem, 4vw, 2.35rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.15;
+      }
+
+      .hero-copy p.lead {
+        margin: 0 0 1.25rem;
+        color: var(--text-muted);
+        font-size: 1.05rem;
+        max-width: 36ch;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin-bottom: 1.25rem;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        padding: 0.55rem 1rem;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
         cursor: pointer;
+        border: 1px solid transparent;
+        text-decoration: none;
+        transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
       }
-      .canvas-wrap {
+
+      .btn:active {
+        transform: scale(0.98);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        color: #f8fafc;
+        box-shadow: 0 4px 20px rgba(14, 165, 233, 0.35);
+      }
+
+      .btn-primary:hover {
+        box-shadow: 0 6px 28px rgba(14, 165, 233, 0.45);
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--text);
+        border-color: var(--border);
+      }
+
+      .btn-ghost:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .hero-hints {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+      }
+
+      .hero-hints li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .hero-hints li::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        margin-top: 0.45rem;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: var(--accent);
+        opacity: 0.85;
+      }
+
+      .globe-shell {
+        position: relative;
+        min-height: min(72vh, 720px);
+        height: 100%;
+        border-radius: var(--globe-radius);
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: radial-gradient(
+          ellipse 120% 80% at 50% 40%,
+          #1e293b 0%,
+          #0f172a 45%,
+          #020617 100%
+        );
+        box-shadow:
+          0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+          0 24px 80px rgba(0, 0, 0, 0.55);
+      }
+
+      #globe-root {
+        position: absolute;
+        inset: 0;
         width: 100%;
         height: 100%;
-        position: relative;
+      }
+
+      #globe-root canvas {
+        display: block;
+      }
+
+      .globe-caption {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 5;
+        pointer-events: none;
+        font-size: 0.75rem;
+        color: rgba(226, 232, 240, 0.55);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .site-footer {
+        padding: 1rem clamp(1rem, 4vw, 2rem);
+        border-top: 1px solid var(--border);
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        text-align: center;
+      }
+
+      .site-footer a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      .site-footer a:hover {
+        text-decoration: underline;
       }
     </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <header class="site-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>Toon Weather Globe</span>
+        </div>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="#explore">Globe</a>
+          <a href="#how">How it works</a>
+        </nav>
+      </header>
+
+      <main class="site-main">
+        <section class="hero" id="explore" aria-labelledby="hero-title">
+          <div class="hero-copy">
+            <h1 id="hero-title">Weather on a living globe</h1>
+            <p class="lead">
+              Spin the planet, chase daylight, and hover any country for a
+              quick forecast. Built for the web with Three.js.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#globe-panel">Open the globe</a>
+              <button type="button" class="btn btn-ghost" id="scroll-how">
+                How to use
+              </button>
+            </div>
+            <ul class="hero-hints">
+              <li>Right-drag to orbit · Left-drag to pan the globe</li>
+              <li>Scroll to zoom · Hover a country for weather</li>
+            </ul>
+          </div>
+
+          <div class="globe-shell" id="globe-panel">
+            <div id="globe-root" aria-label="Interactive 3D globe"></div>
+            <p class="globe-caption">Interactive · drag to explore</p>
+          </div>
+        </section>
+
+        <section
+          id="how"
+          style="
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 0 clamp(1rem, 4vw, 2rem) 2.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+          "
+        >
+          <h2
+            style="
+              color: var(--text);
+              font-size: 1.1rem;
+              margin: 0 0 0.75rem;
+            "
+          >
+            How it works
+          </h2>
+          <p style="margin: 0 0 0.75rem">
+            The scene runs entirely in your browser. Country outlines are
+            projected onto the sphere; when you rest the pointer on a region,
+            the app asks the weather API for that area (when your backend is
+            running).
+          </p>
+          <p style="margin: 0">
+            Tip: the sun and moon follow a simple astronomical approximation so
+            lighting and sky feel tied to real time.
+          </p>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <span>Part of your site — embed the <code>#globe-root</code> mount anywhere.</span>
+      </footer>
+    </div>
     <script type="module" src="/src/main.ts"></script>
+    <script>
+      document.getElementById("scroll-how")?.addEventListener("click", () => {
+        document.getElementById("how")?.scrollIntoView({ behavior: "smooth" });
+      });
+    </script>
   </body>
 </html>
