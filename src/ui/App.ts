@@ -74,6 +74,8 @@ export class App {
 
   private tooltipEl: HTMLDivElement | null = null;
   private countryPanelEl: HTMLDivElement | null = null;
+  private countryPanelBackdropEl: HTMLDivElement | null = null;
+  private countryPanelScrollLockActive = false;
   private resizeObserver: ResizeObserver | null = null;
 
   constructor(private container: HTMLElement) {
@@ -203,6 +205,16 @@ export class App {
     this.countryPanelEl.style.zIndex = "20";
     this.countryPanelEl.style.display = "none";
     document.body.appendChild(this.countryPanelEl);
+
+    this.countryPanelBackdropEl = document.createElement("div");
+    this.countryPanelBackdropEl.style.position = "fixed";
+    this.countryPanelBackdropEl.style.inset = "0";
+    this.countryPanelBackdropEl.style.background = "rgba(0, 0, 0, 0.35)";
+    this.countryPanelBackdropEl.style.zIndex = "19";
+    this.countryPanelBackdropEl.style.display = "none";
+    this.countryPanelBackdropEl.style.pointerEvents = "auto";
+    document.body.appendChild(this.countryPanelBackdropEl);
+    this.countryPanelBackdropEl.addEventListener("click", () => this.exitDetailView());
   }
 
   private bindCityWeatherSearch() {
@@ -847,6 +859,48 @@ export class App {
     if (this.tooltipEl) this.tooltipEl.style.display = "none";
   }
 
+  private preventPageScroll = (event: Event) => {
+    const target = event.target as Node | null;
+    if (this.countryPanelEl && target && this.countryPanelEl.contains(target)) {
+      return;
+    }
+    if (event instanceof WheelEvent || event instanceof TouchEvent) {
+      event.preventDefault();
+    }
+    if (event instanceof KeyboardEvent) {
+      const blockedKeys = [
+        "ArrowUp",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowRight",
+        "PageUp",
+        "PageDown",
+        "Home",
+        "End",
+        "Space",
+      ];
+      if (blockedKeys.includes(event.code)) {
+        event.preventDefault();
+      }
+    }
+  };
+
+  private lockPageScroll() {
+    if (this.countryPanelScrollLockActive) return;
+    document.addEventListener("wheel", this.preventPageScroll, { passive: false, capture: true });
+    document.addEventListener("touchmove", this.preventPageScroll, { passive: false, capture: true });
+    document.addEventListener("keydown", this.preventPageScroll, { capture: true });
+    this.countryPanelScrollLockActive = true;
+  }
+
+  private unlockPageScroll() {
+    if (!this.countryPanelScrollLockActive) return;
+    document.removeEventListener("wheel", this.preventPageScroll, true);
+    document.removeEventListener("touchmove", this.preventPageScroll, true);
+    document.removeEventListener("keydown", this.preventPageScroll, true);
+    this.countryPanelScrollLockActive = false;
+  }
+
   private showCountryPanel(polygon: CountryPolygon) {
     if (!this.countryPanelEl) return;
     const root = this.countryPanelEl;
@@ -888,7 +942,12 @@ export class App {
 
     root.appendChild(header);
     root.appendChild(body);
+    root.style.minHeight = "320px";
     root.style.display = "block";
+    if (this.countryPanelBackdropEl) {
+      this.countryPanelBackdropEl.style.display = "block";
+    }
+    this.lockPageScroll();
 
     void (async () => {
       try {
@@ -897,6 +956,8 @@ export class App {
         );
         if (!this.countryPanelEl || this.countryPanelEl.style.display === "none")
           return;
+        body.style.minHeight = "0";
+        body.style.display = "block";
         body.replaceChildren();
         renderWeatherDetail(body, w);
       } catch {
@@ -914,6 +975,8 @@ export class App {
 
   private hideCountryPanel() {
     if (this.countryPanelEl) this.countryPanelEl.style.display = "none";
+    if (this.countryPanelBackdropEl) this.countryPanelBackdropEl.style.display = "none";
+    this.unlockPageScroll();
   }
 
   private animate() {
