@@ -216,10 +216,27 @@ export class App {
     const result = doc.getElementById("city-search-result") as
       | HTMLDivElement
       | null;
+    const toggleButton = doc.getElementById("city-search-toggle") as
+      | HTMLButtonElement
+      | null;
     if (!form || !input || !result) return;
+
+    const setResultOpen = (open: boolean) => {
+      result.classList.toggle("open", open);
+      if (!toggleButton) return;
+      toggleButton.hidden = false;
+      toggleButton.textContent = open ? "Hide weather" : "Show weather";
+    };
+
+    toggleButton?.addEventListener("click", () => {
+      const isOpen = result.classList.contains("open");
+      setResultOpen(!isOpen);
+    });
 
     const showLoading = () => {
       result.hidden = false;
+      result.classList.add("open");
+      if (toggleButton) toggleButton.hidden = true;
       result.replaceChildren();
       const el = doc.createElement("div");
       el.className = "city-loading";
@@ -229,6 +246,8 @@ export class App {
 
     const showError = (message: string) => {
       result.hidden = false;
+      result.classList.add("open");
+      if (toggleButton) toggleButton.hidden = true;
       result.replaceChildren();
       const el = doc.createElement("div");
       el.className = "city-result-error";
@@ -520,6 +539,7 @@ export class App {
       result.appendChild(divider2);
       result.appendChild(windSunWrap);
       result.appendChild(forecast);
+      setResultOpen(true);
     };
 
     form.addEventListener("submit", async (event) => {
