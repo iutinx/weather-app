@@ -76,6 +76,7 @@ export class App {
   private countryPanelEl: HTMLDivElement | null = null;
   private countryPanelBackdropEl: HTMLDivElement | null = null;
   private countryPanelScrollLockActive = false;
+  private previousBodyOverflow = "";
   private resizeObserver: ResizeObserver | null = null;
 
   constructor(private container: HTMLElement) {
@@ -185,19 +186,21 @@ export class App {
     this.countryPanelEl.style.maxWidth = "420px";
     this.countryPanelEl.style.minWidth = "260px";
     this.countryPanelEl.style.maxHeight = "80vh";
-    this.countryPanelEl.style.overflowY = "auto";
-    this.countryPanelEl.style.padding = "14px 18px";
+    this.countryPanelEl.style.overflow = "hidden";
+    this.countryPanelEl.style.overscrollBehavior = "contain";
+    this.countryPanelEl.style.touchAction = "pan-y";
+    this.countryPanelEl.style.padding = "0";
     this.countryPanelEl.style.borderRadius = "24px";
-    this.countryPanelEl.style.background = "rgba(255, 255, 255, 0.95)";
-    this.countryPanelEl.style.backdropFilter = "none";
+    this.countryPanelEl.style.background = "rgba(255, 255, 255, 0.12)";
+    this.countryPanelEl.style.backdropFilter = "blur(16px) saturate(150%)";
     (
       this.countryPanelEl.style as CSSStyleDeclaration & {
         WebkitBackdropFilter?: string;
       }
-    ).WebkitBackdropFilter = "none";
-    this.countryPanelEl.style.border = "1px solid rgba(229, 231, 235, 1)";
+    ).WebkitBackdropFilter = "blur(16px) saturate(150%)";
+    this.countryPanelEl.style.border = "1px solid rgba(255, 255, 255, 0.2)";
     this.countryPanelEl.style.boxShadow =
-      "0 24px 70px rgba(0, 0, 0, 0.16)";
+      "0 20px 60px rgba(0, 0, 0, 0.25)";
     this.countryPanelEl.style.color = "#111827";
     this.countryPanelEl.style.fontFamily =
       "-apple-system, system-ui, BlinkMacSystemFont, 'SF Pro Text', sans-serif";
@@ -887,6 +890,8 @@ export class App {
 
   private lockPageScroll() {
     if (this.countryPanelScrollLockActive) return;
+    this.previousBodyOverflow = document.body.style.overflow || "";
+    document.body.style.overflow = "hidden";
     document.addEventListener("wheel", this.preventPageScroll, { passive: false, capture: true });
     document.addEventListener("touchmove", this.preventPageScroll, { passive: false, capture: true });
     document.addEventListener("keydown", this.preventPageScroll, { capture: true });
@@ -898,6 +903,8 @@ export class App {
     document.removeEventListener("wheel", this.preventPageScroll, true);
     document.removeEventListener("touchmove", this.preventPageScroll, true);
     document.removeEventListener("keydown", this.preventPageScroll, true);
+    document.body.style.overflow = this.previousBodyOverflow;
+    this.previousBodyOverflow = "";
     this.countryPanelScrollLockActive = false;
   }
 
@@ -906,42 +913,69 @@ export class App {
     const root = this.countryPanelEl;
     root.replaceChildren();
 
-    const header = document.createElement("div");
-    header.style.display = "flex";
-    header.style.justifyContent = "space-between";
-    header.style.alignItems = "center";
-    header.style.marginBottom = "8px";
+    const windowBar = document.createElement("div");
+    windowBar.className = "window-bar";
 
-    const titleEl = document.createElement("h2");
-    titleEl.style.margin = "0";
-    titleEl.style.fontSize = "16px";
+    const dots = document.createElement("div");
+    dots.className = "window-dots";
+    const redDot = document.createElement("span");
+    redDot.className = "dot red";
+    const yellowDot = document.createElement("span");
+    yellowDot.className = "dot yellow";
+    const greenDot = document.createElement("span");
+    greenDot.className = "dot green";
+    dots.appendChild(redDot);
+    dots.appendChild(yellowDot);
+    dots.appendChild(greenDot);
+
+    const titleEl = document.createElement("div");
+    titleEl.className = "window-title";
     titleEl.textContent = polygon.displayName;
 
     const closeBtn = document.createElement("button");
     closeBtn.textContent = "Back to globe";
     closeBtn.style.border = "none";
-    closeBtn.style.background = "rgba(15,23,42,0.8)";
-    closeBtn.style.color = "#9ca3af";
-    closeBtn.style.padding = "4px 8px";
+    closeBtn.style.background = "rgba(255, 255, 255, 0.12)";
+    closeBtn.style.color = "rgba(255, 255, 255, 0.92)";
+    closeBtn.style.padding = "6px 10px";
     closeBtn.style.borderRadius = "999px";
     closeBtn.style.fontSize = "11px";
     closeBtn.style.cursor = "pointer";
+    closeBtn.style.marginLeft = "auto";
+    closeBtn.style.transition = "background 0.2s ease";
+    closeBtn.onmouseenter = () => {
+      closeBtn.style.background = "rgba(255, 255, 255, 0.18)";
+    };
+    closeBtn.onmouseleave = () => {
+      closeBtn.style.background = "rgba(255, 255, 255, 0.12)";
+    };
     closeBtn.onclick = () => this.exitDetailView();
 
-    header.appendChild(titleEl);
-    header.appendChild(closeBtn);
+    const windowTitleWrapper = document.createElement("div");
+    windowTitleWrapper.style.display = "flex";
+    windowTitleWrapper.style.alignItems = "center";
+    windowTitleWrapper.style.gap = "12px";
+    windowTitleWrapper.style.width = "100%";
+    windowTitleWrapper.appendChild(dots);
+    windowTitleWrapper.appendChild(titleEl);
+    windowTitleWrapper.appendChild(closeBtn);
 
-    const body = document.createElement("div");
-    body.style.fontSize = "13px";
-    body.style.opacity = "0.9";
+    windowBar.appendChild(windowTitleWrapper);
+
+    const windowBody = document.createElement("div");
+    windowBody.className = "window-body";
+    windowBody.style.overflowY = "auto";
+    windowBody.style.padding = "14px 18px";
+    windowBody.style.maxHeight = "calc(80vh - 46px)";
+    windowBody.style.color = "rgba(255, 255, 255, 0.95)";
 
     const loading = document.createElement("p");
     loading.style.margin = "0 0 4px";
     loading.textContent = "Loading weather…";
-    body.appendChild(loading);
+    windowBody.appendChild(loading);
 
-    root.appendChild(header);
-    root.appendChild(body);
+    root.appendChild(windowBar);
+    root.appendChild(windowBody);
     root.style.minHeight = "320px";
     root.style.display = "block";
     if (this.countryPanelBackdropEl) {
@@ -956,19 +990,19 @@ export class App {
         );
         if (!this.countryPanelEl || this.countryPanelEl.style.display === "none")
           return;
-        body.style.minHeight = "0";
-        body.style.display = "block";
-        body.replaceChildren();
-        renderWeatherDetail(body, w);
+        windowBody.style.minHeight = "0";
+        windowBody.style.display = "block";
+        windowBody.replaceChildren();
+        renderWeatherDetail(windowBody, w);
       } catch {
         if (!this.countryPanelEl || this.countryPanelEl.style.display === "none")
           return;
-        body.replaceChildren();
+        windowBody.replaceChildren();
         const err = document.createElement("p");
         err.style.margin = "0";
         err.textContent =
           "Could not load weather. Is Docker running and .env configured?";
-        body.appendChild(err);
+        windowBody.appendChild(err);
       }
     })();
   }
