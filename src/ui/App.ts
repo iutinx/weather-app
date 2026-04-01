@@ -7,7 +7,6 @@ import {
   renderWeatherDetail,
   weatherQueryFromPolygon,
 } from "../api/weather";
-import { CelestialSystem } from "./world/celestial";
 import { loadCountryOverlays } from "./world/countries";
 import {
   findCountryAtLatLon,
@@ -31,7 +30,6 @@ export class App {
 
   private globe: THREE.Mesh | null = null;
   private globeGlow: THREE.Mesh | null = null;
-  private celestialSystem: CelestialSystem;
 
   private cityAbortController: AbortController | null = null;
   private cityRequestId = 0;
@@ -113,6 +111,7 @@ export class App {
 
     this.raycaster.params.Line!.threshold = 0.03;
     this.setupOverlayElements();
+    this.setupSceneLighting();
 
     this.camera.position.copy(this.cameraDefaultPosition);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -124,7 +123,6 @@ export class App {
     this.controls.minDistance = 0.5;
     this.controls.maxDistance = 5;
 
-    this.celestialSystem = new CelestialSystem(this.scene);
 
     this.loadSceneAssets();
     this.bindEvents();
@@ -148,6 +146,19 @@ export class App {
     canvas.style.display = "block";
     canvas.style.width = "100%";
     canvas.style.height = "100%";
+  }
+
+  private setupSceneLighting() {
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+    this.scene.add(ambientLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.75);
+    keyLight.position.set(2.5, 4.5, 3.5);
+    this.scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.35);
+    fillLight.position.set(-2, -1, 2);
+    this.scene.add(fillLight);
   }
 
   private observeContainerSize() {
@@ -1027,7 +1038,6 @@ export class App {
 
     const t = now * 0.005;
     this.countryHoverMaterial.opacity = 0.8 + 0.5 * Math.sin(t);
-    this.celestialSystem.update();
 
     if (this.globeGlow) {
       this.globeGlow.scale.setScalar(1 + 0.012 * Math.sin(t * 0.4));
