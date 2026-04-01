@@ -59,7 +59,7 @@ export class App {
   // ~2 degrees per minute; subtle enough to read but noticeable.
   private earthRotationRateRadPerSec = (20 * Math.PI) / 180 / 60;
 
-  private cameraDefaultPosition = new THREE.Vector3(0, 0, 2.5);
+  private cameraDefaultPosition = new THREE.Vector3(0, 0, 2.0);
   private cameraDefaultTarget = new THREE.Vector3(0, 0, 0);
   private cameraAnimation:
     | {

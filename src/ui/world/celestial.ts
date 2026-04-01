@@ -132,6 +132,7 @@ export class CelestialSystem {
     this.sunObject.add(this.sunFlare);
 
     this.scene.add(this.sunObject);
+    this.sunObject.visible = false;
 
     this.moonCoreMesh = new THREE.Mesh(
       new THREE.SphereGeometry(0.2, 32, 32),
@@ -175,6 +176,7 @@ export class CelestialSystem {
     this.moonObject.add(this.moonFlare);
 
     this.scene.add(this.moonObject);
+    this.moonObject.visible = false;
 
     this.loadSunModel();
     this.loadMoonModel();
