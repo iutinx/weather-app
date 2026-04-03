@@ -4,6 +4,8 @@ import { appendForecastCharts } from "../ui/weatherCharts";
 /** Parsed Visual Crossing timeline payload for UI. */
 export type WeatherData = {
   locationLabel: string;
+  latitude: number | null;
+  longitude: number | null;
   localTimeDisplay: string;
   current: {
     temp: number | null;
@@ -86,6 +88,8 @@ type ApiPayload = {
   resolvedAddress?: string;
   address?: string;
   tzoffset?: number;
+  latitude?: number;
+  longitude?: number;
   currentConditions?: ApiCurrent;
   days?: ApiDay[];
 };
@@ -289,6 +293,8 @@ function parseWeatherFromApi(
 
   return {
     locationLabel: data.resolvedAddress ?? data.address ?? fallbackQuery,
+    latitude: numOrNull(data.latitude),
+    longitude: numOrNull(data.longitude),
     localTimeDisplay: formatLocationLocalTime(datetime, tz),
     current: {
       temp: numOrNull(cur.temp),

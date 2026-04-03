@@ -42,7 +42,7 @@ export class App {
 
   private hoverFetchGen = 0;
   private hoveredWeatherCountryId: string | null = null;
-  private hoverWeatherDebounce: ReturnType<typeof setTimeout> | null = null;
+  private hoverWeatherDebounce: number | null = null;
   private hoverFetchAbort: AbortController | null = null;
   private lastClientX = 0;
   private lastClientY = 0;
@@ -285,7 +285,15 @@ export class App {
       const parts = locationLabel.split(",").map((p) => p.trim()).filter(Boolean);
       const city = parts[0] ?? locationLabel;
       const country = parts.slice(1).join(", ");
-      return { city, country: country || "—" };
+      return { city: toTitleCase(city), country: toTitleCase(country) || "—" };
+    };
+
+    const toTitleCase = (str: string): string => {
+      return str
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
     };
 
     const statCard = (
@@ -335,7 +343,13 @@ export class App {
       result.hidden = false;
       result.replaceChildren();
 
-      const { city, country } = splitLocation(data.locationLabel);
+      let { city, country } = splitLocation(data.locationLabel);
+      if (country === "—" && data.latitude != null && data.longitude != null) {
+        const foundCountry = findCountryAtLatLon(this.countryPolygons, data.latitude, data.longitude);
+        if (foundCountry) {
+          country = toTitleCase(foundCountry.name);
+        }
+      }
 
       const hero = doc.createElement("div");
       hero.className = "city-hero";
