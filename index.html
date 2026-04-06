@@ -66,14 +66,21 @@
         z-index: 30;
         background: linear-gradient(
           to bottom,
-          rgba(0, 0, 0, 0.6) 0%,
-          rgba(0, 0, 0, 0.22) 45%,
-          transparent 100%
+          rgba(6, 11, 20, 0.95) 0%,
+          rgba(6, 11, 20, 0.85) 100%
         );
         box-shadow: none;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
+        transition: background 0.3s ease;
+      }
+
+      .site-header.scrolled {
+        background: rgba(6, 11, 20, 0.7);
+        backdrop-filter: blur(16px) saturate(150%);
+        -webkit-backdrop-filter: blur(16px) saturate(150%);
+        border-bottom-color: rgba(255, 255, 255, 0.12);
       }
 
       .site-header-inner {
@@ -95,47 +102,87 @@
       }
 
       .brand-mark {
-        width: 10px;
-        height: 10px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
-        background: #111827;
-        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
+        background: #ffffff;
+        box-shadow: none;
       }
 
       .site-nav {
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
+        gap: 0.5rem;
       }
 
       .site-nav a {
         color: rgba(255, 255, 255, 0.92);
         text-decoration: none;
         font-size: 0.95rem;
-        font-weight: 520;
-        padding: 0.45rem 0.7rem;
-        border-radius: 10px;
+        font-weight: 500;
+        padding: 0.5rem 0.85rem;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
         transition: all 0.2s ease;
+        background: rgba(255, 255, 255, 0.05);
       }
 
       .site-nav a:hover {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.3);
       }
 
-      .nav-cta {
-        margin-left: 0.35rem;
-        padding: 0.65rem 1rem !important;
-        border-radius: 10px;
-        background: rgba(15, 23, 42, 0.85);
-        color: #fff !important;
-        border: 1px solid rgba(255, 255, 255, 0.24);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-        transition: transform 0.2s ease, opacity 0.2s ease;
+      .site-nav a.active {
+        background: rgba(255, 255, 255, 0.18);
+        border-color: rgba(255, 255, 255, 0.4);
       }
 
-      .nav-cta:hover {
-        transform: translateY(-1px);
-        opacity: 0.92;
+      .nav-toggle {
+        display: none;
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.92);
+        cursor: pointer;
+        padding: 0.5rem;
+        font-size: 1.5rem;
+        z-index: 40;
+        transition: all 0.2s ease;
+      }
+
+      .nav-toggle:hover {
+        color: #ffffff;
+      }
+
+      @media (max-width: 768px) {
+        .site-header-inner {
+          flex-wrap: wrap;
+        }
+
+        .nav-toggle {
+          display: block;
+          order: 2;
+        }
+
+        .site-nav {
+          order: 3;
+          width: 100%;
+          flex-direction: column;
+          gap: 0.4rem;
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.3s ease;
+          margin-top: 0.5rem;
+        }
+
+        .site-nav.active {
+          max-height: 300px;
+        }
+
+        .site-nav a {
+          width: 100%;
+          text-align: center;
+          padding: 0.6rem 0.85rem;
+        }
       }
 
       .site-main {
@@ -192,6 +239,19 @@
         text-align: center;
         position: relative;
         z-index: 1;
+      }
+
+      .hero-globe-preview {
+        width: 140px;
+        height: 140px;
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .hero-globe-preview canvas {
+        filter: drop-shadow(0 0 24px rgba(0, 0, 0, 0.4));
       }
 
       .hero-badge {
@@ -251,37 +311,56 @@
       }
 
       .btn-primary {
-        background: rgba(15, 23, 42, 0.84);
-        color: #fff;
-        border-color: rgba(255, 255, 255, 0.25);
-        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.34);
+        background: #ffffff;
+        color: #0a0a0a;
+        border-color: transparent;
+        box-shadow: 0 16px 48px rgba(255, 255, 255, 0.2);
+        font-weight: 700;
+      }
+
+      .btn-primary:hover {
+        background: rgba(255, 255, 255, 0.92);
       }
 
       .btn-secondary {
-        background: rgba(255, 255, 255, 0.12);
+        background: transparent;
         color: #fff;
-        border-color: rgba(255, 255, 255, 0.5);
+        border-color: rgba(255, 255, 255, 0.4);
         border-width: 1.5px;
+      }
+
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.6);
       }
 
       .hero-hints {
         list-style: none;
-        padding: 10px 14px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.22);
-        background: rgba(0, 0, 0, 0.28);
+        padding: 0;
+        margin: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 14px;
+        gap: 12px;
         flex-wrap: wrap;
-        max-width: 760px;
       }
 
       .hero-hints li {
-        color: rgba(255, 255, 255, 0.76);
-        font-size: 0.95rem;
-        font-weight: 520;
+        color: rgba(255, 255, 255, 0.64);
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .hero-hints li::before {
+        content: "·";
+        margin-right: 12px;
+        color: rgba(255, 255, 255, 0.4);
+      }
+
+      .hero-hints li:first-child::before {
+        display: none;
       }
 
       .globe-wrap {
@@ -704,6 +783,107 @@
         }
       }
 
+      .features-section {
+        padding: 72px 18px 72px;
+        position: relative;
+      }
+
+      .features-card {
+        width: min(960px, 94vw);
+        margin: 0 auto;
+        border-radius: 24px;
+        background: rgba(15, 23, 42, 0.48);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+        overflow: hidden;
+      }
+
+      .features-window-bar {
+        height: 46px;
+        background: rgba(255, 255, 255, 0.16);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+        padding: 0 16px;
+      }
+
+      .features-window-title {
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.85);
+        font-weight: 650;
+      }
+
+      .features-inner {
+        padding: 56px 32px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 48px;
+        position: relative;
+      }
+
+      .feature-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        position: relative;
+      }
+
+      .feature-item:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        right: -24px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1px;
+        height: 60%;
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .feature-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        margin-bottom: 16px;
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+
+      .feature-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.95);
+        margin: 0 0 12px;
+      }
+
+      .feature-description {
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.6);
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      @media (max-width: 768px) {
+        .features-inner {
+          grid-template-columns: 1fr;
+          gap: 32px;
+          padding: 40px 24px;
+        }
+
+        .feature-item:not(:last-child)::after {
+          display: none;
+        }
+      }
+
       .how-section {
         padding: 72px 18px 92px;
         position: relative;
@@ -771,11 +951,17 @@
             <span class="brand-mark" aria-hidden="true"></span>
             <span>Toon Weather Globe</span>
           </div>
+          <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
           <nav class="site-nav" aria-label="Primary">
-            <a class="nav-cta"  href="#explore">Home</a>
-            <a class="nav-cta" href="#globe-panel">Open the globe</a>
-            <a class="nav-cta"   href="#city-search">Manual search</a>
-            <a class="nav-cta"  href="#how">How it works</a>
+            <a href="#explore" class="nav-link active">Home</a>
+            <a href="#globe-panel" class="nav-link">Open Globe</a>
+            <a href="#city-search" class="nav-link">Search a city</a>
           </nav>
         </div>
       </header>
@@ -783,11 +969,13 @@
       <main class="site-main">
         <section class="hero" id="explore" aria-labelledby="hero-title">
           <div class="hero-inner">
+            <div class="hero-globe-preview">
+              <canvas id="hero-globe-canvas" width="140" height="140" aria-hidden="true"></canvas>
+            </div>
             <div class="hero-badge">· Interactive 3D Weather</div>
             <h1 id="hero-title">Weather on a living globe</h1>
             <p class="lead">
-              Spin the planet, chase daylight, and hover any country for a
-              quick forecast. Built for the web with Three.js.
+              Spin the planet, chase daylight, and hover any country for a live forecast. Built entirely in your browser with Three.js.
             </p>
 
             <div class="hero-actions">
@@ -797,13 +985,14 @@
                 class="btn btn-secondary"
                 id="scroll-how"
               >
-                How to use
+                How it works
               </button>
             </div>
 
             <ul class="hero-hints">
-              <li>Right-drag to orbit · Left-drag to pan the globe</li>
-              <li>Scroll to zoom · Hover a country for weather</li>
+              <li>Drag to orbit</li>
+              <li>Scroll to zoom</li>
+              <li>Hover for weather</li>
             </ul>
           </div>
 
@@ -867,6 +1056,36 @@
           </div>
         </section>
 
+        <section class="features-section">
+          <div class="features-card">
+            <div class="features-window-bar">
+              <div class="window-dots" aria-hidden="true">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+              </div>
+              <div class="features-window-title">Features</div>
+            </div>
+            <div class="features-inner">
+              <div class="feature-item">
+                <div class="feature-icon">🌍</div>
+                <h3 class="feature-title">Spin the world</h3>
+                <p class="feature-description">Drag the globe in any direction. Country borders are rendered live on the sphere surface.</p>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon">🌧️</div>
+                <h3 class="feature-title">Hover for forecasts</h3>
+                <p class="feature-description">Rest your cursor on any country to pull up current conditions and a 7-day outlook.</p>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon">🔍</div>
+                <h3 class="feature-title">Search any city</h3>
+                <p class="feature-description">Skip the globe and jump straight to any city for current conditions and a 7-day forecast.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section id="how" class="how-section">
           <div class="how-inner">
             <h2>How it works</h2>
@@ -893,11 +1112,136 @@
     </div>
     <script type="module" src="/src/main.ts"></script>
     <script>
+      // Hamburger menu toggle
+      const navToggle = document.querySelector('.nav-toggle');
+      const siteNav = document.querySelector('.site-nav');
+      
+      if (navToggle) {
+        navToggle.addEventListener('click', () => {
+          const isActive = siteNav.classList.toggle('active');
+          navToggle.setAttribute('aria-expanded', isActive);
+        });
+      }
+
+      // Close menu when a link is clicked
+      const navLinks = document.querySelectorAll('.nav-link');
+      navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+          siteNav?.classList.remove('active');
+          navToggle?.setAttribute('aria-expanded', false);
+        });
+      });
+
+      // Update active nav link and header scroll state
+      const header = document.querySelector('.site-header');
+      const sections = document.querySelectorAll('[id="explore"], [id="globe-panel"], [id="city-search"]');
+
+      function updateActiveNav() {
+        // Update header scroll state
+        if (window.scrollY > 20) {
+          header?.classList.add('scrolled');
+        } else {
+          header?.classList.remove('scrolled');
+        }
+
+        // Update active nav link
+        let current = '';
+        sections.forEach(section => {
+          const sectionTop = section.offsetTop - 100;
+          if (window.scrollY >= sectionTop) {
+            current = section.getAttribute('id');
+          }
+        });
+
+        navLinks.forEach(link => {
+          link.classList.remove('active');
+          const href = link.getAttribute('href').substring(1);
+          if (href === current) {
+            link.classList.add('active');
+          }
+        });
+      }
+
+      window.addEventListener('scroll', updateActiveNav);
+      
       document.getElementById("scroll-how")?.addEventListener("click", () => {
         document
           .getElementById("how")
           ?.scrollIntoView({ behavior: "smooth" });
       });
+
+      // Animated globe preview
+      const canvas = document.getElementById('hero-globe-canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let rotation = 0;
+
+        function drawGlobe() {
+          const width = canvas.width;
+          const height = canvas.height;
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const radius = Math.min(width, height) * 0.35;
+
+          // Clear canvas
+          ctx.fillStyle = 'transparent';
+          ctx.clearRect(0, 0, width, height);
+
+          // Save context state
+          ctx.save();
+          ctx.translate(centerX, centerY);
+          ctx.rotate(rotation);
+
+          // Draw sphere
+          const gradient = ctx.createRadialGradient(0, 0, radius * 0.3, 0, 0, radius);
+          gradient.addColorStop(0, 'rgba(100, 150, 255, 0.15)');
+          gradient.addColorStop(0.7, 'rgba(20, 60, 150, 0.12)');
+          gradient.addColorStop(1, 'rgba(10, 20, 80, 0.08)');
+
+          ctx.beginPath();
+          ctx.arc(0, 0, radius, 0, Math.PI * 2);
+          ctx.fillStyle = gradient;
+          ctx.fill();
+
+          // Draw grid lines (latitude)
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+          ctx.lineWidth = 0.5;
+          for (let lat = -60; lat <= 60; lat += 30) {
+            const y = (lat / 90) * radius * 0.6;
+            const latRadius = Math.sqrt(radius * radius - y * y);
+            ctx.beginPath();
+            ctx.ellipse(0, y, latRadius * 0.95, latRadius * 0.3, 0, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+
+          // Draw grid lines (longitude)
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+          for (let lon = 0; lon < 180; lon += 45) {
+            const angle = (lon * Math.PI) / 180;
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 0.6, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${0.04 + (lon % 90 === 0 ? 0.04 : 0)})`;
+            ctx.stroke();
+          }
+
+          // Draw accent circle
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(0, 0, radius, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.restore();
+        }
+
+        function animate() {
+          rotation += 0.003;
+          drawGlobe();
+          requestAnimationFrame(animate);
+        }
+
+        animate();
+      }
     </script>
   </body>
 </html>
