@@ -15,7 +15,6 @@ An interactive 3D weather visualization built with Three.js and React Three Fibe
 ## Features
 
 - 🌍 &nbsp;**Interactive 3D globe** — toon-shaded world rendered with Three.js & React Three Fiber
-- ☀️ &nbsp;**3D sun model** — dynamic GLTF sun asset rendered in the scene
 - 📡 &nbsp;**Live weather data** — fetched from a custom-built REST API
 - ⚡ &nbsp;**Redis caching** — low-latency responses via server-side caching
 - 🐳 &nbsp;**Dockerized backend** — API + Redis spin up with a single command
