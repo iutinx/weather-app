@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Reference — Iuteen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0c0b;
+    --surface: #161412;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.13);
+    --text: #e8e2d8;
+    --muted: #6b6560;
+    --faint: #2e2b28;
+    --green: #1d9e75;
+    --green-bg: rgba(29,158,117,0.1);
+    --amber: #BA7517;
+    --amber-bg: rgba(186,117,23,0.1);
+    --red: #A32D2D;
+    --red-bg: rgba(163,45,45,0.1);
+    --blue: #378ADD;
+    --blue-bg: rgba(55,138,221,0.08);
+    --mono: 'Geist Mono', monospace;
+    --serif: 'Instrument Serif', serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Layout */
+  .layout { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 0.5px solid var(--border);
+    padding: 2rem 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--bg);
+  }
+
+  .sidebar-logo {
+    padding: 0 1.5rem 1.5rem;
+    border-bottom: 0.5px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+
+  .sidebar-logo-name {
+    font-family: var(--serif);
+    font-size: 18px;
+    color: var(--text);
+    display: block;
+  }
+
+  .sidebar-logo-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .nav-section {
+    padding: 0 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .nav-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .nav-link {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 4px 0;
+    transition: color 0.15s;
+    text-decoration: none;
+  }
+
+  .nav-link:hover { color: var(--text); text-decoration: none; }
+  .nav-link.active { color: var(--text); }
+
+  /* Main */
+  .main {
+    flex: 1;
+    max-width: 780px;
+    padding: 3rem 3rem 6rem;
+  }
+
+  /* Page header */
+  .page-header { margin-bottom: 3rem; }
+
+  .page-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .page-title {
+    font-family: var(--serif);
+    font-size: 36px;
+    color: var(--text);
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .page-title em { font-style: italic; }
+
+  .page-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.8;
+    max-width: 540px;
+  }
+
+  .badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  .badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    border: 0.5px solid var(--border);
+    color: var(--muted);
+  }
+
+  .badge-green { border-color: rgba(29,158,117,0.3); color: var(--green); background: var(--green-bg); }
+
+  /* Section */
+  .section { margin-bottom: 3rem; }
+
+  .section-heading {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    padding-bottom: 8px;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  /* Endpoint block */
+  .endpoint {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+
+  .endpoint-header {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .method-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 3px;
+    background: var(--green-bg);
+    color: var(--green);
+    border: 0.5px solid rgba(29,158,117,0.2);
+    letter-spacing: 0.05em;
+  }
+
+  .endpoint-path {
+    font-size: 14px;
+    color: var(--text);
+    letter-spacing: 0.01em;
+  }
+
+  .endpoint-path .param { color: var(--blue); }
+
+  .endpoint-body { padding: 14px 18px; }
+  .endpoint-body p { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+
+  .endpoint-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .endpoint-meta span::before {
+    content: '·';
+    margin-right: 6px;
+    opacity: 0.4;
+  }
+
+  .endpoint-meta span:first-child::before { content: none; }
+
+  /* Field table */
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .field-table th {
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 0 10px;
+    border-bottom: 0.5px solid var(--border);
+    font-weight: 400;
+  }
+
+  .field-table th:nth-child(2) { padding-left: 24px; }
+  .field-table th:nth-child(3) { padding-left: 24px; }
+
+  .field-table td {
+    padding: 9px 0;
+    border-bottom: 0.5px solid var(--faint);
+    vertical-align: top;
+  }
+
+  .field-table tr:last-child td { border-bottom: none; }
+
+  .field-table td:nth-child(2) { padding-left: 24px; }
+  .field-table td:nth-child(3) { padding-left: 24px; color: var(--muted); }
+
+  .field-name { color: var(--text); }
+  .field-type {
+    color: var(--blue);
+    font-size: 11px;
+    white-space: nowrap;
+    opacity: 0.8;
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: rgba(255,255,255,0.05);
+    border: 0.5px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    color: var(--text);
+  }
+
+  /* Response codes */
+  .response-list { display: flex; flex-direction: column; gap: 0; }
+
+  .response-item {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 10px 18px;
+    border-bottom: 0.5px solid var(--faint);
+    background: var(--surface);
+  }
+
+  .response-item:first-child { border-radius: 8px 8px 0 0; }
+  .response-item:last-child { border-radius: 0 0 8px 8px; border-bottom: none; }
+
+  .response-code {
+    font-size: 12px;
+    font-weight: 500;
+    min-width: 36px;
+    letter-spacing: 0.02em;
+  }
+
+  .r200 { color: var(--green); }
+  .r400 { color: var(--amber); }
+  .r500, .r502, .r503 { color: var(--red); }
+
+  .response-desc { color: var(--muted); font-size: 12px; }
+
+  /* Note box */
+  .note {
+    border: 0.5px solid var(--border);
+    border-left: 2px solid rgba(29,158,117,0.4);
+    border-radius: 0 6px 6px 0;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 1rem;
+    line-height: 1.7;
+  }
+
+  /* Example */
+  .code-block {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .code-block-header {
+    padding: 8px 16px;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .code-block pre {
+    padding: 16px;
+    font-size: 12px;
+    color: var(--text);
+    overflow-x: auto;
+    line-height: 1.7;
+  }
+
+  .c-key { color: #9cdcfe; }
+  .c-str { color: #ce9178; }
+  .c-num { color: #b5cea8; }
+  .c-null { color: var(--muted); }
+  .c-comment { color: var(--muted); font-style: italic; }
+
+  /* Divider */
+  hr { border: none; border-top: 0.5px solid var(--border); margin: 2.5rem 0; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="sidebar-logo-name">Iuteen</span>
+      <div class="sidebar-logo-sub">Weather on a living globe</div>
+    </div>
+
+    <nav class="nav-section">
+      <div class="nav-label">Reference</div>
+      <a href="#overview" class="nav-link active">Overview</a>
+      <a href="#endpoint" class="nav-link">Endpoint</a>
+      <a href="#response" class="nav-link">Response</a>
+      <a href="#current" class="nav-link">currentConditions</a>
+      <a href="#days" class="nav-link">days</a>
+      <a href="#errors" class="nav-link">Error codes</a>
+      <a href="#example" class="nav-link">Example</a>
+    </nav>
+
+    <nav class="nav-section">
+      <div class="nav-label">Links</div>
+      <a href="https://github.com/iutinx" class="nav-link" target="_blank">GitHub ↗</a>
+      <a href="mailto:iuteendev@outlook.com" class="nav-link">Contact</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="page-header" id="overview">
+      <div class="page-eyebrow">API Reference</div>
+      <h1 class="page-title">Weather <em>on a living</em> globe</h1>
+      <p class="page-desc">A simple REST API that returns current conditions and a 15-day forecast for any city in the world. No authentication required.</p>
+      <div class="badges">
+        <span class="badge badge-green">Public</span>
+        <span class="badge">No auth</span>
+        <span class="badge">Metric units</span>
+        <span class="badge">20 req/s</span>
+        <span class="badge">Cached 2h</span>
+      </div>
+    </div>
+
+    <div class="section" id="endpoint">
+      <div class="section-heading">Endpoint</div>
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method-badge">GET</span>
+          <span class="endpoint-path">/weather/<span class="param">{city_name}</span></span>
+        </div>
+        <div class="endpoint-body">
+          <p>Returns live weather and a 15-day forecast for the given location.</p>
+          <div class="endpoint-meta">
+            <span>Rate limit: 20 requests/second</span>
+            <span>Cached per city for 2 hours</span>
+          </div>
+        </div>
+      </div>
+
+      <br>
+      <table class="field-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field-name">city_name</td>
+            <td class="field-type">string</td>
+            <td>City or place name. Accepts most global locations (e.g. <code>London</code>, <code>Preutesti</code>, <code>Dolhasca</code>).</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section" id="response">
+      <div class="section-heading">Response — top level</div>
+      <table class="field-table">
+        <thead>
+          <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="field-name">address</td><td class="field-type">string</td><td>Resolved location name.</td></tr>
+          <tr><td class="field-name">resolvedAddress</td><td class="field-type">string</td><td>Full resolved address string.</td></tr>
+          <tr><td class="field-name">latitude</td><td class="field-type">number</td><td>Latitude of the location.</td></tr>
+          <tr><td class="field-name">longitude</td><td class="field-type">number</td><td>Longitude of the location.</td></tr>
+          <tr><td class="field-name">timezone</td><td class="field-type">string</td><td>IANA timezone string, e.g. <code>Europe/Bucharest</code>.</td></tr>
+          <tr><td class="field-name">tzoffset</td><td class="field-type">number</td><td>UTC offset in hours.</td></tr>
+          <tr><td class="field-name">currentConditions</td><td class="field-type">object</td><td>Live weather at time of request. See below.</td></tr>
+          <tr><td class="field-name">days</td><td class="field-type">array</td><td>15-day forecast array. Each entry follows the day object schema.</td></tr>
+          <tr><td class="field-name">stations</td><td class="field-type">object</td><td>Weather stations used as data sources, keyed by station ID.</td></tr>
+          <tr><td class="field-name">queryCost</td><td class="field-type">number</td><td>Always <code>1</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section" id="current">
+      <div class="section-heading">currentConditions object</div>
+      <table class="field-table">
+        <thead>
+          <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="field-name">datetime</td><td class="field-type">string</td><td>Local time (HH:MM:SS).</td></tr>
+          <tr><td class="field-name">datetimeEpoch</td><td class="field-type">number</td><td>Unix timestamp.</td></tr>
+          <tr><td class="field-name">temp</td><td class="field-type">number</td><td>Temperature in °C.</td></tr>
+          <tr><td class="field-name">feelslike</td><td class="field-type">number</td><td>Feels-like temperature in °C.</td></tr>
+          <tr><td class="field-name">humidity</td><td class="field-type">number</td><td>Relative humidity (%).</td></tr>
+          <tr><td class="field-name">dew</td><td class="field-type">number</td><td>Dew point in °C.</td></tr>
+          <tr><td class="field-name">precip</td><td class="field-type">number</td><td>Precipitation in mm.</td></tr>
+          <tr><td class="field-name">precipprob</td><td class="field-type">number</td><td>Probability of precipitation (%).</td></tr>
+          <tr><td class="field-name">preciptype</td><td class="field-type">array | null</td><td>Types of precipitation, e.g. <code>["rain", "snow"]</code>. Null if none.</td></tr>
+          <tr><td class="field-name">snow</td><td class="field-type">number</td><td>Snowfall in cm.</td></tr>
+          <tr><td class="field-name">snowdepth</td><td class="field-type">number</td><td>Snow depth in cm.</td></tr>
+          <tr><td class="field-name">windspeed</td><td class="field-type">number</td><td>Wind speed in km/h.</td></tr>
+          <tr><td class="field-name">windgust</td><td class="field-type">number</td><td>Wind gust speed in km/h.</td></tr>
+          <tr><td class="field-name">winddir</td><td class="field-type">number</td><td>Wind direction in degrees (0–360).</td></tr>
+          <tr><td class="field-name">pressure</td><td class="field-type">number</td><td>Atmospheric pressure in hPa.</td></tr>
+          <tr><td class="field-name">visibility</td><td class="field-type">number</td><td>Visibility in km.</td></tr>
+          <tr><td class="field-name">cloudcover</td><td class="field-type">number</td><td>Cloud cover (%).</td></tr>
+          <tr><td class="field-name">uvindex</td><td class="field-type">number</td><td>UV index.</td></tr>
+          <tr><td class="field-name">solarradiation</td><td class="field-type">number</td><td>Solar radiation in W/m².</td></tr>
+          <tr><td class="field-name">solarenergy</td><td class="field-type">number</td><td>Solar energy in MJ/m².</td></tr>
+          <tr><td class="field-name">moonphase</td><td class="field-type">number</td><td>Moon phase 0–1 (0/1 = new moon, 0.5 = full moon).</td></tr>
+          <tr><td class="field-name">sunrise</td><td class="field-type">string</td><td>Sunrise time (HH:MM:SS) in local time.</td></tr>
+          <tr><td class="field-name">sunset</td><td class="field-type">string</td><td>Sunset time (HH:MM:SS) in local time.</td></tr>
+          <tr><td class="field-name">sunriseEpoch</td><td class="field-type">number</td><td>Unix timestamp for sunrise.</td></tr>
+          <tr><td class="field-name">sunsetEpoch</td><td class="field-type">number</td><td>Unix timestamp for sunset.</td></tr>
+          <tr><td class="field-name">conditions</td><td class="field-type">string</td><td>Human-readable condition summary, e.g. <code>Partially cloudy</code>.</td></tr>
+          <tr><td class="field-name">icon</td><td class="field-type">string</td><td>Condition icon slug, e.g. <code>partly-cloudy-night</code>.</td></tr>
+          <tr><td class="field-name">source</td><td class="field-type">string</td><td><code>obs</code> = observed, <code>fcst</code> = forecast, <code>comb</code> = combined.</td></tr>
+          <tr><td class="field-name">stations</td><td class="field-type">array</td><td>Station IDs that contributed to this reading.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section" id="days">
+      <div class="section-heading">days object (forecast)</div>
+      <p style="color:var(--muted);font-size:12px;margin-bottom:1rem;">Each entry in <code>days</code> includes all fields from <code>currentConditions</code> plus the following:</p>
+      <table class="field-table">
+        <thead>
+          <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="field-name">datetime</td><td class="field-type">string</td><td>Date in <code>YYYY-MM-DD</code> format.</td></tr>
+          <tr><td class="field-name">tempmax</td><td class="field-type">number</td><td>Daily high temperature in °C.</td></tr>
+          <tr><td class="field-name">tempmin</td><td class="field-type">number</td><td>Daily low temperature in °C.</td></tr>
+          <tr><td class="field-name">feelslikemax</td><td class="field-type">number</td><td>Daily high feels-like in °C.</td></tr>
+          <tr><td class="field-name">feelslikemin</td><td class="field-type">number</td><td>Daily low feels-like in °C.</td></tr>
+          <tr><td class="field-name">precipcover</td><td class="field-type">number</td><td>Percentage of the day with precipitation.</td></tr>
+          <tr><td class="field-name">severerisk</td><td class="field-type">number</td><td>Risk of severe weather (0–100).</td></tr>
+          <tr><td class="field-name">description</td><td class="field-type">string</td><td>Plain-language summary of the day's weather.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section" id="errors">
+      <div class="section-heading">Error codes</div>
+      <div class="response-list">
+        <div class="response-item">
+          <span class="response-code r200">200</span>
+          <span class="response-desc">Success. Returns full weather JSON.</span>
+        </div>
+        <div class="response-item">
+          <span class="response-code r400">400</span>
+          <span class="response-desc">Invalid location name.</span>
+        </div>
+        <div class="response-item">
+          <span class="response-code r502">502</span>
+          <span class="response-desc">Failed to reach the upstream weather service.</span>
+        </div>
+        <div class="response-item">
+          <span class="response-code r503">503</span>
+          <span class="response-desc">Upstream weather service unavailable.</span>
+        </div>
+        <div class="response-item">
+          <span class="response-code r500">500</span>
+          <span class="response-desc">Internal server error — malformed upstream response.</span>
+        </div>
+      </div>
+      <div class="note">Responses are cached per location for 2 hours. Repeated requests for the same city within that window return the cached result instantly.</div>
+    </div>
+
+    <div class="section" id="example">
+      <div class="section-heading">Example</div>
+      <div class="code-block" style="margin-bottom:1rem;">
+        <div class="code-block-header">
+          <span>Request</span>
+        </div>
+        <pre>GET /weather/London</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>Response · 200 OK</span>
+        </div>
+        <pre>{
+  <span class="c-key">"address"</span>: <span class="c-str">"London"</span>,
+  <span class="c-key">"resolvedAddress"</span>: <span class="c-str">"London, England, United Kingdom"</span>,
+  <span class="c-key">"latitude"</span>: <span class="c-num">51.5064</span>,
+  <span class="c-key">"longitude"</span>: <span class="c-num">-0.12721</span>,
+  <span class="c-key">"timezone"</span>: <span class="c-str">"Europe/London"</span>,
+  <span class="c-key">"tzoffset"</span>: <span class="c-num">1.0</span>,
+  <span class="c-key">"currentConditions"</span>: {
+    <span class="c-key">"datetime"</span>: <span class="c-str">"14:32:00"</span>,
+    <span class="c-key">"temp"</span>: <span class="c-num">12.4</span>,
+    <span class="c-key">"feelslike"</span>: <span class="c-num">10.1</span>,
+    <span class="c-key">"humidity"</span>: <span class="c-num">74.0</span>,
+    <span class="c-key">"conditions"</span>: <span class="c-str">"Partially cloudy"</span>,
+    <span class="c-key">"icon"</span>: <span class="c-str">"partly-cloudy-day"</span>,
+    <span class="c-key">"windspeed"</span>: <span class="c-num">18.3</span>,
+    <span class="c-key">"precip"</span>: <span class="c-num">0.0</span>,
+    <span class="c-key">"preciptype"</span>: <span class="c-null">null</span>,
+    <span class="c-comment">// ... all other fields</span>
+  },
+  <span class="c-key">"days"</span>: [ <span class="c-comment">/* 15 day objects */</span> ],
+  <span class="c-key">"queryCost"</span>: <span class="c-num">1</span>
+}</pre>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>
