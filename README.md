@@ -8,7 +8,23 @@ An interactive 3D weather visualization built with Three.js and React Three Fibe
 
 ## Preview
 
-> _Screenshots coming soon_
+### Landing Page
+![Landing page — Weather on a living globe](public/assets/screenshots/Screenshot 2026-04-11 at 16.08.08.png)
+
+### Interactive Globe
+![3D toon-shaded globe with country borders](public/assets/screenshots/Screenshot 2026-04-11 at 16.09.17.png)
+
+### Features Overview
+![Features section — Spin the world, Hover for forecasts, Search any city](public/assets/screenshots/Screenshot 2026-04-11 at 16.09.23.png)
+
+### Weather Detail (from globe hover)
+![Weather detail panel for Ilfov, Romania](public/assets/screenshots/Screenshot 2026-04-11 at 16.09.29.png)
+
+### City Search
+![City search page — Explore any city](public/assets/screenshots/Screenshot 2026-04-11 at 16.09.40.png)
+
+### Weather Card
+![Detailed weather card for Bucharest](public/assets/screenshots/Screenshot 2026-04-11 at 16.09.54.png)
 
 ---
 
@@ -116,6 +132,16 @@ weather-app/
 | `npm run dev:web` | Start frontend only |
 | `npm run build` | Type-check and build for production |
 | `npm run preview` | Preview the production build |
+
+---
+
+## API Reference
+
+The backend exposes a simple public REST API — no authentication required.
+
+![API reference documentation](public/assets/screenshots/Screenshot 2026-04-11 at 16.10.05.png)
+
+Full docs are available at the API reference page (see footer links in the app).
 
 ---
 
